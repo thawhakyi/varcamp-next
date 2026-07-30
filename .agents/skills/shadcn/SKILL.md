@@ -42,7 +42,7 @@ These rules are **always enforced**. Each links to a file with Incorrect/Correct
 
 ### Forms & Inputs → [forms.md](./rules/forms.md)
 
-- **Forms use `FieldGroup` + `Field`.** Never use raw `div` with `space-y-*` or `grid gap-*` for form layout.
+- **Forms use the project ReUI `FieldGroup` + `Field`.** Import them from `@workspace/ui/components/reui/field`; never use raw layout wrappers or add spacing classes to fields and field groups.
 - **`InputGroup` uses `InputGroupInput`/`InputGroupTextarea`.** Never raw `Input`/`Textarea` inside `InputGroup`.
 - **Buttons inside inputs use `InputGroup` + `InputGroupAddon`.**
 - **Option sets (2–7 choices) use `ToggleGroup`.** Don't loop `Button` with manual active state.
@@ -94,6 +94,12 @@ These are the most common patterns that differentiate correct shadcn/ui code. Fo
 
 ```tsx
 // Form layout: FieldGroup + Field, not div + Label.
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@workspace/ui/components/reui/field"
+
 <FieldGroup>
   <Field>
     <FieldLabel htmlFor="email">Email</FieldLabel>

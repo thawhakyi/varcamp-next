@@ -21,6 +21,8 @@ import {
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 
 type TimezoneSelectProps = {
+  "aria-describedby"?: string
+  "aria-invalid"?: boolean
   disabled?: boolean
   value?: string
   onChange: (timezone: string) => void
@@ -29,6 +31,8 @@ type TimezoneSelectProps = {
 }
 
 export function TimezoneSelect({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   disabled,
   value,
   onChange,
@@ -39,7 +43,7 @@ export function TimezoneSelect({
 
   const timezoneList = useMemo(() => {
     if (typeof Intl.supportedValuesOf !== "function") return []
-    
+
     return Intl.supportedValuesOf("timeZone").map((tz) => {
       let offset = ""
       try {
@@ -49,10 +53,12 @@ export function TimezoneSelect({
         })
         const parts = formatter.formatToParts()
         offset = parts.find((p) => p.type === "timeZoneName")?.value || ""
-      } catch (e) {}
+      } catch {
+        offset = ""
+      }
 
       const parts = tz.split("/")
-      const region = parts.length > 1 ? parts[0] : "Other"
+      const region = parts.length > 1 ? (parts[0] ?? "Other") : "Other"
       const city = parts.slice(1).join("/").replace(/_/g, " ")
 
       return {
@@ -77,17 +83,18 @@ export function TimezoneSelect({
   const groupedTimezones = useMemo(() => {
     const groups: Record<string, typeof filteredTimezones> = {}
     for (const tz of filteredTimezones) {
-      if (!groups[tz.region]) groups[tz.region] = []
-      groups[tz.region].push(tz)
+      const regionTimezones = groups[tz.region] ?? []
+      regionTimezones.push(tz)
+      groups[tz.region] = regionTimezones
     }
     return groups
   }, [filteredTimezones])
 
   return (
     <Combobox
-      items={filteredTimezones}
-      value={value || ""}
-      onValueChange={(tz: string | null) => {
+      items={filteredTimezones.map((timezone) => timezone.value)}
+      value={value ?? null}
+      onValueChange={(tz) => {
         if (tz) {
           onChange(tz)
         }
@@ -96,16 +103,18 @@ export function TimezoneSelect({
       <ComboboxTrigger
         render={
           <Button
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={ariaInvalid}
             variant="outline"
             className={cn(
-              "flex w-full justify-between px-3 py-2 font-normal hover:bg-transparent focus:z-10 bg-transparent",
+              "flex w-full justify-between bg-transparent px-3 py-2 font-normal hover:bg-transparent focus:z-10",
               className,
               disabled && "opacity-50"
             )}
             disabled={disabled}
           >
             <div className="flex items-center gap-2 overflow-hidden">
-              <GlobeIcon className="size-4 opacity-60 shrink-0" />
+              <GlobeIcon className="size-4 shrink-0 opacity-60" />
               <span className="flex-1 truncate text-left">
                 {value ? value.replace(/_/g, " ") : placeholder}
               </span>
@@ -122,7 +131,7 @@ export function TimezoneSelect({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           showTrigger={false}
-          className="border-input focus-visible:border-border rounded-none border-0 px-3 py-2.5 shadow-none ring-0! outline-none! focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="rounded-none border-0 border-input px-3 py-2.5 shadow-none ring-0! outline-none! focus-visible:border-border focus-visible:ring-0 focus-visible:ring-offset-0"
         />
         <ComboboxSeparator />
         <ComboboxEmpty className="px-4 py-2.5 text-sm">
@@ -134,16 +143,20 @@ export function TimezoneSelect({
               <ScrollArea className="size-full min-h-0 **:data-[slot=scroll-area-scrollbar]:m-0 [&_[data-slot=scroll-area-viewport]]:h-full [&_[data-slot=scroll-area-viewport]]:overscroll-contain">
                 {Object.entries(groupedTimezones).map(([region, tzs]) => (
                   <ComboboxGroup key={region}>
-                    <ComboboxLabel className="font-semibold px-2 py-1.5 text-xs text-muted-foreground sticky top-0 bg-popover/90 backdrop-blur-sm z-10">{region}</ComboboxLabel>
+                    <ComboboxLabel className="sticky top-0 z-10 bg-popover/90 px-2 py-1.5 text-xs font-semibold text-muted-foreground backdrop-blur-sm">
+                      {region}
+                    </ComboboxLabel>
                     {tzs.map((item) => (
                       <ComboboxItem
                         key={item.value}
                         value={item.value}
                         className="flex items-center gap-2 px-2"
                       >
-                        <span className="flex-1 text-sm truncate">{item.city}</span>
+                        <span className="flex-1 truncate text-sm">
+                          {item.city}
+                        </span>
                         {item.offset && (
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <span className="text-xs whitespace-nowrap text-muted-foreground">
                             {item.offset}
                           </span>
                         )}

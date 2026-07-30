@@ -107,12 +107,12 @@ export const teamPriorityFields = [
   },
   {
     key: "second",
-    label: "Second priority",
+    label: "Second priority (Optional)",
     placeholder: "Choose your backup team",
   },
   {
     key: "third",
-    label: "Third priority",
+    label: "Third priority (Optional)",
     placeholder: "Choose another team",
   },
 ] as const
@@ -132,7 +132,6 @@ export const volunteerSkillOptions = [
   { id: "javascript", label: "JavaScript" },
   { id: "laravel", label: "Laravel" },
   { id: "react-nextjs", label: "React or Next.js" },
-  { id: "wordpress", label: "WordPress" },
   { id: "ui-ux-design", label: "UI/UX design" },
   { id: "graphic-design", label: "Graphic design" },
   { id: "video-editing", label: "Video editing" },
@@ -147,43 +146,68 @@ export const volunteerSkillOptions = [
 
 export type VolunteerSkillId = (typeof volunteerSkillOptions)[number]["id"]
 
-export const technicalReadinessQuestions = [
+export const operatingSystemOptions = [
+  { value: "windows", label: "Windows" },
+  { value: "macos", label: "macOS" },
+  { value: "linux", label: "Linux" },
+  { value: "chromeos", label: "ChromeOS" },
+  { value: "android", label: "Android" },
+  { value: "ios-ipados", label: "iOS or iPadOS" },
+  { value: "other", label: "Other" },
+] as const
+
+export const browserOptions = [
+  { value: "chrome", label: "Google Chrome" },
+  { value: "firefox", label: "Mozilla Firefox" },
+  { value: "edge", label: "Microsoft Edge" },
+  { value: "safari", label: "Safari" },
+  { value: "brave", label: "Brave" },
+  { value: "opera", label: "Opera" },
+  { value: "other", label: "Other" },
+] as const
+
+export const technicalReadinessFields = [
   {
+    type: "yes-no",
     key: "computerAccess",
     label: "Do you have access to a computer?",
   },
   {
+    type: "yes-no",
     key: "stableInternet",
     label: "Do you have a stable internet connection?",
   },
   {
-    key: "workingMicrophone",
-    label: "Do you have a working microphone?",
-  },
-  {
-    key: "workingCamera",
-    label: "Do you have a working camera?",
-  },
-  {
+    type: "select",
     key: "operatingSystem",
     label: "Which operating system do you use?",
+    placeholder: "Select your operating system",
+    options: operatingSystemOptions,
   },
   {
-    key: "browserTesting",
-    label: "Which browsers can you test?",
+    type: "select",
+    key: "browser",
+    label: "Which browser do you use?",
+    placeholder: "Select your browser",
+    options: browserOptions,
   },
   {
+    type: "yes-no",
     key: "workAdventureExperience",
     label: "Have you used WorkAdventure before?",
   },
 ] as const
 
 export type TechnicalReadinessKey =
-  (typeof technicalReadinessQuestions)[number]["key"]
+  (typeof technicalReadinessFields)[number]["key"]
 export type YesNoAnswer = "yes" | "no"
+export type OperatingSystem = (typeof operatingSystemOptions)[number]["value"]
+export type Browser = (typeof browserOptions)[number]["value"]
+export type TechnicalReadinessValue =
+  YesNoAnswer | OperatingSystem | Browser | ""
 export type TechnicalReadinessAnswers = Record<
   TechnicalReadinessKey,
-  YesNoAnswer | ""
+  TechnicalReadinessValue
 >
 
 export const commitmentAgreementFields = [
@@ -193,7 +217,7 @@ export const commitmentAgreementFields = [
   },
   {
     key: "availabilityCommunication",
-    label: "I agree to communicate if I become unavailable.",
+    label: "I agree to inform if I become unavailable.",
   },
   {
     key: "codeOfConduct",

@@ -1,6 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
+  "ui": "stream",
+  "globalEnv": [
+    "GOOGLE_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
+    "GOOGLE_SHEETS_SPREADSHEET_ID",
+    "GOOGLE_SHEETS_RANGE",
+    "VOLUNTEER_RATE_LIMIT_MAX",
+    "VOLUNTEER_RATE_LIMIT_WINDOW_SECONDS"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

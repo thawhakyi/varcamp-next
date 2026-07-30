@@ -13,9 +13,15 @@
 
 ## Forms use FieldGroup + Field
 
-Always use `FieldGroup` + `Field` — never raw `div` with `space-y-*`:
+Always import and use the project ReUI `FieldGroup` + `Field` primitives:
 
 ```tsx
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@workspace/ui/components/reui/field"
+
 <FieldGroup>
   <Field>
     <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -27,6 +33,21 @@ Always use `FieldGroup` + `Field` — never raw `div` with `space-y-*`:
   </Field>
 </FieldGroup>
 ```
+
+Do not import form-layout primitives from `@workspace/ui/components/field`, and
+do not recreate their layout with raw wrappers.
+
+`@workspace/ui/components/reui/field` owns the complete form rhythm:
+
+- `FieldGroup` owns spacing between fields and nested groups.
+- `Field` owns its responsive grid, row padding, and label/control gaps.
+- `FieldSet`, `FieldLegend`, and `FieldContent` own their internal spacing.
+
+Do not add padding, margin, or gap utilities to these primitives or to wrapper
+elements around them. In particular, avoid `p-*`, `px-*`, `py-*`, `m-*`,
+`mx-*`, `my-*`, and `gap-*` overrides. Compose the primitives without spacing
+`className` values so the responsive layout in the ReUI field component remains
+the single source of truth.
 
 Use `Field orientation="horizontal"` for settings pages. Use `FieldLabel className="sr-only"` for visually hidden labels.
 
@@ -159,7 +180,7 @@ Use `FieldSet` + `FieldLegend` for related checkboxes, radios, or switches — n
 <FieldSet>
   <FieldLegend variant="label">Preferences</FieldLegend>
   <FieldDescription>Select all that apply.</FieldDescription>
-  <FieldGroup className="gap-3">
+  <FieldGroup>
     <Field orientation="horizontal">
       <Checkbox id="dark" />
       <FieldLabel htmlFor="dark" className="font-normal">Dark mode</FieldLabel>

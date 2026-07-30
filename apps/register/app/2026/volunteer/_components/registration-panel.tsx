@@ -1,48 +1,60 @@
-import type { Dispatch, SetStateAction } from "react"
 import type { Country } from "react-phone-number-input"
 import { motion } from "framer-motion"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Spinner } from "@workspace/ui/components/spinner"
 import {
   StepperContent,
   StepperPanel,
 } from "@workspace/ui/components/reui/stepper"
 
+import { BorderDecorations } from "./border-decorations"
 import { CommitmentAgreementStep } from "./commitment-agreement-step"
 import { PersonalInformationStep } from "./personal-information-step"
 import { SkillsExperienceStep } from "./skills-experience-step"
 import { TeamPreferencesStep } from "./team-preferences-step"
 import { TechnicalReadinessStep } from "./technical-readiness-step"
+import type {
+  PersonalInformation,
+  RegistrationFieldErrors,
+} from "@/lib/volunteer-registration-schema"
 import {
   type CommitmentAgreementKey,
   type CommitmentAgreements,
   registrationSteps,
   type TechnicalReadinessAnswers,
   type TechnicalReadinessKey,
+  type TechnicalReadinessValue,
   type TeamPriorities,
   type TeamPriorityKey,
   type VolunteerSkillId,
-  type YesNoAnswer,
 } from "./volunteer-data"
 
 type RegistrationPanelProps = {
   activeStep: number
   commitmentAgreements: CommitmentAgreements
   country: Country | undefined
+  fieldErrors: RegistrationFieldErrors
+  isSubmitting: boolean
   onCommitmentAgreementChange: (
     agreement: CommitmentAgreementKey,
     accepted: boolean
   ) => void
-  onCountryChange: Dispatch<SetStateAction<Country | undefined>>
+  onCountryChange: (country: Country) => void
+  onPersonalInformationChange: (
+    key: keyof PersonalInformation,
+    value: string
+  ) => void
   onSkillChange: (skill: VolunteerSkillId, selected: boolean) => void
   onStepChange: (step: number) => void
   onTeamPriorityChange: (key: TeamPriorityKey, value: string) => void
   onTechnicalReadinessChange: (
     question: TechnicalReadinessKey,
-    answer: YesNoAnswer
+    answer: TechnicalReadinessValue
   ) => void
-  onTimezoneChange: Dispatch<SetStateAction<string>>
+  onTimezoneChange: (timezone: string) => void
+  personalInformation: PersonalInformation
   shouldReduceMotion: boolean | null
   selectedSkills: VolunteerSkillId[]
   teamPriorities: TeamPriorities
@@ -54,13 +66,17 @@ export function RegistrationPanel({
   activeStep,
   commitmentAgreements,
   country,
+  fieldErrors,
+  isSubmitting,
   onCommitmentAgreementChange,
   onCountryChange,
+  onPersonalInformationChange,
   onSkillChange,
   onStepChange,
   onTeamPriorityChange,
   onTechnicalReadinessChange,
   onTimezoneChange,
+  personalInformation,
   shouldReduceMotion,
   selectedSkills,
   teamPriorities,
@@ -68,10 +84,13 @@ export function RegistrationPanel({
   timezone,
 }: RegistrationPanelProps) {
   return (
-    <main className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col lg:py-5">
+    <main
+      aria-labelledby="registration-step-heading"
+      className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col items-center lg:py-5"
+    >
       <StepperPanel className="flex h-full max-w-5xl flex-col overflow-hidden">
-        <div className="no-scrollbar flex-1 overflow-y-auto px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-10 xl:px-12">
-          <div className="mx-auto w-full max-w-5xl">
+        <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-6">
+          <div className="mx-auto w-full max-w-3xl">
             {registrationSteps.map((step, index) => (
               <StepperContent
                 key={step.title}
@@ -80,14 +99,12 @@ export function RegistrationPanel({
               >
                 <motion.div
                   initial={
-                    shouldReduceMotion
-                      ? false
-                      : { opacity: 0, y: 20, filter: "blur(8px)" }
+                    shouldReduceMotion ? false : { opacity: 0.72, y: 10 }
                   }
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{
-                    duration: shouldReduceMotion ? 0 : 0.5,
-                    ease: "easeOut",
+                    duration: shouldReduceMotion ? 0 : 0.36,
+                    ease: [0.16, 1, 0.3, 1],
                   }}
                   className="flex min-h-full flex-col"
                 >
@@ -96,28 +113,35 @@ export function RegistrationPanel({
                   {index === 0 ? (
                     <PersonalInformationStep
                       country={country}
+                      errors={fieldErrors}
+                      information={personalInformation}
                       onCountryChange={onCountryChange}
+                      onInformationChange={onPersonalInformationChange}
                       timezone={timezone}
                       onTimezoneChange={onTimezoneChange}
                     />
                   ) : index === 1 ? (
                     <TeamPreferencesStep
+                      errors={fieldErrors}
                       priorities={teamPriorities}
                       onPriorityChange={onTeamPriorityChange}
                     />
                   ) : index === 2 ? (
                     <SkillsExperienceStep
+                      error={fieldErrors.selectedSkills}
                       selectedSkills={selectedSkills}
                       onSkillChange={onSkillChange}
                     />
                   ) : index === 3 ? (
                     <TechnicalReadinessStep
                       answers={technicalReadiness}
+                      errors={fieldErrors}
                       onAnswerChange={onTechnicalReadinessChange}
                     />
                   ) : (
                     <CommitmentAgreementStep
                       agreements={commitmentAgreements}
+                      errors={fieldErrors}
                       onAgreementChange={onCommitmentAgreementChange}
                     />
                   )}
@@ -129,9 +153,7 @@ export function RegistrationPanel({
 
         <RegistrationActions
           activeStep={activeStep}
-          canCompleteRegistration={Object.values(commitmentAgreements).every(
-            Boolean
-          )}
+          isSubmitting={isSubmitting}
           onStepChange={onStepChange}
         />
       </StepperPanel>
@@ -146,28 +168,36 @@ type StepHeadingProps = {
 
 function StepHeading({ currentStep, title }: StepHeadingProps) {
   return (
-    <div className="mb-8 flex items-start justify-between gap-6 border-b border-border/60 pb-6 sm:mb-10 sm:pb-7">
-      <div className="flex min-w-0 flex-col gap-1.5">
-        <h2 className="font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+    <section
+      aria-live="polite"
+      className="relative mb-8 bg-muted/20 px-5 py-6 sm:mb-10 sm:px-7 sm:py-8"
+    >
+      <BorderDecorations />
+
+      <div className="flex min-w-0 flex-col gap-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          Step {currentStep} of {registrationSteps.length}
+        </span>
+        <h1
+          id="registration-step-heading"
+          className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+        >
           {title}
-        </h2>
+        </h1>
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
           Please fill out the information below.
         </p>
       </div>
-      <span className="shrink-0 pt-1 text-sm font-medium text-muted-foreground">
-        {currentStep} / {registrationSteps.length}
-      </span>
-    </div>
+    </section>
   )
 }
 
 function RegistrationActions({
   activeStep,
-  canCompleteRegistration,
+  isSubmitting,
   onStepChange,
 }: Pick<RegistrationPanelProps, "activeStep" | "onStepChange"> & {
-  canCompleteRegistration: boolean
+  isSubmitting: boolean
 }) {
   const isFirstStep = activeStep === 1
   const isLastStep = activeStep === registrationSteps.length
@@ -180,22 +210,32 @@ function RegistrationActions({
           variant="ghost"
           size="lg"
           onClick={() => onStepChange(Math.max(1, activeStep - 1))}
-          disabled={isFirstStep}
+          disabled={isFirstStep || isSubmitting}
           className="min-w-20 px-3 sm:min-w-24 sm:px-4"
         >
           <ChevronLeftIcon data-icon="inline-start" />
           Back
         </Button>
         <Button
-          type="button"
+          type={isLastStep ? "submit" : "button"}
           size="lg"
-          onClick={() =>
-            onStepChange(Math.min(registrationSteps.length, activeStep + 1))
+          onClick={
+            isLastStep
+              ? undefined
+              : () =>
+                  onStepChange(
+                    Math.min(registrationSteps.length, activeStep + 1)
+                  )
           }
-          disabled={isLastStep && !canCompleteRegistration}
+          disabled={isSubmitting}
           className="min-w-28 px-4 shadow-lg shadow-primary/20 sm:min-w-40 sm:px-6"
         >
-          {isLastStep ? "Complete Registration" : "Continue"}
+          {isSubmitting && <Spinner data-icon="inline-start" />}
+          {isSubmitting
+            ? "Submitting..."
+            : isLastStep
+              ? "Complete Registration"
+              : "Continue"}
           {!isLastStep && <ChevronRightIcon data-icon="inline-end" />}
         </Button>
       </div>

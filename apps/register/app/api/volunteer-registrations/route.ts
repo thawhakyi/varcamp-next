@@ -1,0 +1,119 @@
+import { appendVolunteerRegistration } from "@/lib/google-sheets"
+import {
+  consumeVolunteerRateLimit,
+  getVolunteerClientIp,
+} from "@/lib/volunteer-rate-limit"
+import { volunteerRegistrationSchema } from "@/lib/volunteer-registration-schema"
+
+export const runtime = "nodejs"
+
+const maximumRequestSize = 50_000
+const responseHeaders = {
+  "Cache-Control": "no-store",
+}
+
+function createRateLimitHeaders(
+  result: ReturnType<typeof consumeVolunteerRateLimit>
+) {
+  return {
+    ...responseHeaders,
+    "RateLimit-Limit": String(result.limit),
+    "RateLimit-Remaining": String(result.remaining),
+    "RateLimit-Reset": String(Math.ceil(result.resetAt / 1000)),
+  }
+}
+
+export async function POST(request: Request) {
+  const requestOrigin = request.headers.get("origin")
+  const expectedOrigin = new URL(request.url).origin
+
+  if (requestOrigin && requestOrigin !== expectedOrigin) {
+    return Response.json(
+      { message: "Cross-origin submissions are not allowed." },
+      { status: 403, headers: responseHeaders }
+    )
+  }
+
+  const contentLength = Number(request.headers.get("content-length") || 0)
+
+  if (contentLength > maximumRequestSize) {
+    return Response.json(
+      { message: "Submission is too large." },
+      { status: 413, headers: responseHeaders }
+    )
+  }
+
+  const clientIp = getVolunteerClientIp(request)
+
+  if (!clientIp) {
+    return Response.json(
+      { message: "Direct submissions are not allowed." },
+      { status: 403, headers: responseHeaders }
+    )
+  }
+
+  const rateLimit = consumeVolunteerRateLimit(clientIp)
+  const rateLimitHeaders = createRateLimitHeaders(rateLimit)
+
+  if (!rateLimit.success) {
+    const retryMinutes = Math.max(1, Math.ceil(rateLimit.retryAfter / 60))
+
+    return Response.json(
+      {
+        message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
+      },
+      {
+        status: 429,
+        headers: {
+          ...rateLimitHeaders,
+          "Retry-After": String(rateLimit.retryAfter),
+        },
+      }
+    )
+  }
+
+  let requestBody: unknown
+
+  try {
+    requestBody = await request.json()
+  } catch {
+    return Response.json(
+      { message: "Invalid submission data." },
+      { status: 400, headers: rateLimitHeaders }
+    )
+  }
+
+  const result = volunteerRegistrationSchema.safeParse(requestBody)
+
+  if (!result.success) {
+    return Response.json(
+      {
+        message: result.error.issues[0]?.message || "Check your information.",
+        issues: result.error.issues.map((issue) => ({
+          message: issue.message,
+          path: issue.path.join("."),
+        })),
+      },
+      { status: 422, headers: rateLimitHeaders }
+    )
+  }
+
+  try {
+    await appendVolunteerRegistration(result.data, clientIp)
+
+    return Response.json(
+      { message: "Registration submitted successfully." },
+      { status: 201, headers: rateLimitHeaders }
+    )
+  } catch (error) {
+    console.error("Unable to append volunteer registration:", error)
+
+    return Response.json(
+      {
+        message:
+          "Registration could not be saved right now. Please try again later.",
+      },
+      { status: 503, headers: rateLimitHeaders }
+    )
+  }
+}

@@ -26,7 +26,7 @@ Users will be accessing this from a web browser to fill out a multi-step registr
 Must align with the existing varcamp web app styling and use the `reui` design system.
 
 ## Evidence on Hand
-The existing volunteer page demonstrates the stepper form and ReUI components (`apps/register/app/volunteer/page.tsx`).
+The existing volunteer page demonstrates the stepper form and ReUI components (`apps/register/app/2026/volunteer/page.tsx`).
 
 ## Product Principles
 - Streamlined Experience: The registration must be fast and easy to navigate for all types of users.

@@ -23,6 +23,8 @@ import {
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 
 type CountrySelectProps = {
+  "aria-describedby"?: string
+  "aria-invalid"?: boolean
   disabled?: boolean
   value?: Country
   onChange: (country: Country) => void
@@ -31,6 +33,8 @@ type CountrySelectProps = {
 }
 
 export function CountrySelect({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   disabled,
   value,
   onChange,
@@ -57,9 +61,9 @@ export function CountrySelect({
 
   return (
     <Combobox
-      items={filteredCountries}
-      value={value || ""}
-      onValueChange={(country: Country | null) => {
+      items={filteredCountries.map((country) => country.value)}
+      value={value ?? null}
+      onValueChange={(country) => {
         if (country) {
           onChange(country)
         }
@@ -68,9 +72,11 @@ export function CountrySelect({
       <ComboboxTrigger
         render={
           <Button
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={ariaInvalid}
             variant="outline"
             className={cn(
-              "flex w-full justify-between px-3 py-2 font-normal hover:bg-transparent focus:z-10 bg-transparent",
+              "flex w-full justify-between bg-transparent px-3 py-2 font-normal hover:bg-transparent focus:z-10",
               className,
               disabled && "opacity-50"
             )}
@@ -97,7 +103,7 @@ export function CountrySelect({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           showTrigger={false}
-          className="border-input focus-visible:border-border rounded-none border-0 px-3 py-2.5 shadow-none ring-0! outline-none! focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="rounded-none border-0 border-input px-3 py-2.5 shadow-none ring-0! outline-none! focus-visible:border-border focus-visible:ring-0 focus-visible:ring-offset-0"
         />
         <ComboboxSeparator />
         <ComboboxEmpty className="px-4 py-2.5 text-sm">
@@ -117,7 +123,9 @@ export function CountrySelect({
                       country={item.value}
                       countryName={item.label}
                     />
-                    <span className="flex-1 text-sm truncate">{item.label}</span>
+                    <span className="flex-1 truncate text-sm">
+                      {item.label}
+                    </span>
                   </ComboboxItem>
                 ))}
               </ScrollArea>
@@ -141,7 +149,7 @@ function FlagComponent({
   return (
     <span className="flex h-4 w-4 shrink-0 items-center justify-center [&_svg:not([class*='size-'])]:size-full! [&_svg:not([class*='size-'])]:rounded-[5px]">
       {Flag ? (
-        <Flag title={countryName} />
+        <Flag title={countryName ?? country ?? "Country flag"} />
       ) : (
         <GlobeIcon className="size-4 opacity-60" />
       )}

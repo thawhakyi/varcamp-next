@@ -1,5 +1,5 @@
-import { VolunteerRegistration } from "./_components/volunteer-registration"
+import { redirect } from "next/navigation"
 
-export default function VolunteerPage() {
-  return <VolunteerRegistration />
+export default function LegacyVolunteerPage() {
+  redirect("/2026/volunteer")
 }
