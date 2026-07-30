@@ -12,6 +12,45 @@ const responseHeaders = {
   "Cache-Control": "no-store",
 }
 
+function getFirstForwardedValue(value: string | null) {
+  return value?.split(",")[0]?.trim()
+}
+
+function getPublicRequestOrigin(request: Request) {
+  const requestUrl = new URL(request.url)
+  const forwardedHost = getFirstForwardedValue(
+    request.headers.get("x-forwarded-host")
+  )
+  const host = forwardedHost || request.headers.get("host") || requestUrl.host
+  const forwardedProtocol = getFirstForwardedValue(
+    request.headers.get("x-forwarded-proto")
+  )
+  const protocol =
+    forwardedProtocol === "http" || forwardedProtocol === "https"
+      ? forwardedProtocol
+      : requestUrl.protocol.slice(0, -1)
+
+  try {
+    return new URL(`${protocol}://${host}`).origin
+  } catch {
+    return requestUrl.origin
+  }
+}
+
+function isSameOriginSubmission(request: Request) {
+  const requestOrigin = request.headers.get("origin")
+
+  if (!requestOrigin) {
+    return true
+  }
+
+  try {
+    return new URL(requestOrigin).origin === getPublicRequestOrigin(request)
+  } catch {
+    return false
+  }
+}
+
 function createRateLimitHeaders(
   result: ReturnType<typeof consumeVolunteerRateLimit>
 ) {
@@ -24,10 +63,7 @@ function createRateLimitHeaders(
 }
 
 export async function POST(request: Request) {
-  const requestOrigin = request.headers.get("origin")
-  const expectedOrigin = new URL(request.url).origin
-
-  if (requestOrigin && requestOrigin !== expectedOrigin) {
+  if (!isSameOriginSubmission(request)) {
     return Response.json(
       { message: "Cross-origin submissions are not allowed." },
       { status: 403, headers: responseHeaders }

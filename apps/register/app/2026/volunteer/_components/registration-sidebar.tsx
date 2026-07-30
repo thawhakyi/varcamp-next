@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@workspace/ui/components/accordion"
 import { Button } from "@workspace/ui/components/button"
+import { VarCampLogoHorizontal } from "@workspace/ui/components/varcamp-logo"
 import {
   StepperIndicator,
   StepperItem,
@@ -44,7 +45,10 @@ export function RegistrationSidebar({
     <div className="relative z-10 flex w-full shrink-0 px-4 py-4 sm:px-5 sm:py-5 lg:h-full lg:w-88 lg:overflow-y-auto lg:px-5 lg:py-5">
       <div className="relative isolate flex w-full flex-col overflow-hidden rounded-2xl bg-card px-4 py-4 text-foreground ring-1 ring-border sm:px-5 sm:py-5 lg:min-h-full">
         <header className="flex min-h-9 items-center justify-between gap-3">
-          <VolunteerBrand />
+          <VarCampLogoHorizontal
+            className="h-6 w-auto text-foreground"
+            title="VarCamp"
+          />
           <ThemeToggle />
         </header>
 
@@ -63,35 +67,6 @@ export function RegistrationSidebar({
           shouldReduceMotion={shouldReduceMotion}
         />
       </div>
-    </div>
-  )
-}
-
-function VolunteerBrand() {
-  return (
-    <div className="inline-flex min-w-0 items-center gap-2">
-      <div
-        className="flex size-7 shrink-0 items-center justify-center bg-foreground p-1.5 text-background"
-        aria-hidden="true"
-      >
-        <svg
-          viewBox="25.668 25.1352 49.6644 50"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="size-[0.95rem]"
-        >
-          <circle cx="70.634" cy="29.8334" r="4.69799" fill="currentColor" />
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M25.668 57.0144V29.8332C25.668 27.2386 27.7713 25.1352 30.366 25.1352C32.9606 25.1352 35.0639 27.2386 35.0639 29.8332V57.0144C35.0639 61.833 38.9702 65.7392 43.7888 65.7392H57.2116C62.0302 65.7392 65.9364 61.833 65.9364 57.0144V43.7258C65.9364 41.1312 68.0398 39.0278 70.6344 39.0278C73.229 39.0278 75.3324 41.1312 75.3324 43.7258V57.0144C75.3324 67.0222 67.2194 75.1352 57.2116 75.1352H43.7888C33.7809 75.1352 25.668 67.0222 25.668 57.0144Z"
-            fill="currentColor"
-          />
-        </svg>
-      </div>
-      <span className="text-sm font-medium text-foreground md:text-base">
-        VarCamp2026
-      </span>
     </div>
   )
 }
@@ -395,7 +370,7 @@ function DesktopStepNavigation({
                       className={cn(
                         "text-sm transition-colors duration-300",
                         isActive
-                          ? "font-semibold text-primary"
+                          ? "font-semibold text-foreground dark:text-primary"
                           : isPast
                             ? "font-medium text-foreground"
                             : "font-medium text-muted-foreground"
