@@ -1,15 +1,9 @@
-import { Geist, Google_Sans, Geist_Mono, Inter } from "next/font/google"
+import { Geist, Geist_Mono, Inter } from "next/font/google"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
 import { Toaster } from "@workspace/ui/components/sonner"
-
-const googleSans = Google_Sans({
-  subsets: ["latin"],
-  variable: "--font-google-sans",
-  adjustFontFallback: false,
-})
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +32,6 @@ export default function RootLayout({
       className={cn(
         "antialiased",
         geist.variable,
-        googleSans.variable,
         "font-sans",
         inter.variable,
         geistMono.variable

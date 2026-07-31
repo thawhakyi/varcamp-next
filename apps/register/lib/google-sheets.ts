@@ -158,7 +158,13 @@ function getContactChannel(
 ) {
   const channel = contactChannelDetails.get(channelId)
 
-  return channel ? `${channel.label}: ${channel.linkPrefix}${value}` : value
+  if (!channel) {
+    return value
+  }
+
+  const linkPrefix = "linkPrefix" in channel ? channel.linkPrefix : ""
+
+  return `${channel.label}: ${linkPrefix}${value}`
 }
 
 function createRegistrationRow(

@@ -133,7 +133,7 @@ export function ContactChannel({
             <InputGroupAddon>
               <InputGroupText>
                 <SelectedIcon aria-hidden="true" stroke={1.8} />
-                {selectedChannel.prefix}
+                {"prefix" in selectedChannel ? selectedChannel.prefix : null}
               </InputGroupText>
             </InputGroupAddon>
             <InputGroupInput
