@@ -38,7 +38,8 @@ const initialPersonalInformation: PersonalInformation = {
   fullName: "",
   username: "",
   email: "",
-  phone: "",
+  contactChannel: "",
+  contactValue: "",
   city: "",
   bio: "",
 }
@@ -176,7 +177,7 @@ export function VolunteerRegistration() {
     clearFieldErrors(`commitmentAgreements.${agreement}`)
   }
 
-  const updateCountry = (value: Country) => {
+  const updateCountry = (value: Country | undefined) => {
     setCountry(value)
     clearFieldErrors("personalInformation.country")
   }
@@ -248,7 +249,7 @@ export function VolunteerRegistration() {
 
   return (
     <form
-      className="mx-auto flex h-dvh w-full grow flex-col overflow-hidden xl:px-2"
+      className="mx-auto flex h-dvh w-full grow flex-col overflow-hidden"
       onSubmit={handleSubmit}
     >
       <Stepper

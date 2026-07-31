@@ -5,10 +5,11 @@ import { getCountries } from "react-phone-number-input"
 import en from "react-phone-number-input/locale/en"
 import flags from "react-phone-number-input/flags"
 import type { Country } from "react-phone-number-input"
-import { GlobeIcon } from "lucide-react"
+import { GlobeIcon, XIcon } from "lucide-react"
 
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   Combobox,
   ComboboxContent,
@@ -27,7 +28,7 @@ type CountrySelectProps = {
   "aria-invalid"?: boolean
   disabled?: boolean
   value?: Country
-  onChange: (country: Country) => void
+  onChange: (country: Country | undefined) => void
   className?: string
   placeholder?: string
 }
@@ -63,41 +64,51 @@ export function CountrySelect({
     <Combobox
       items={filteredCountries.map((country) => country.value)}
       value={value ?? null}
-      onValueChange={(country) => {
-        if (country) {
-          onChange(country)
-        }
-      }}
+      onValueChange={(country) => onChange(country ?? undefined)}
     >
-      <ComboboxTrigger
-        render={
-          <Button
-            aria-describedby={ariaDescribedBy}
-            aria-invalid={ariaInvalid}
-            variant="outline"
-            className={cn(
-              "flex w-full justify-between bg-transparent px-3 py-2 font-normal hover:bg-transparent focus:z-10",
-              className,
-              disabled && "opacity-50"
-            )}
-            disabled={disabled}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <FlagComponent
-                country={value}
-                countryName={value ? en[value] : undefined}
-              />
-              <span className="flex-1 truncate text-left">
-                {value ? en[value] : placeholder}
+      <ButtonGroup className="w-full" aria-label="Country selection">
+        <ComboboxTrigger
+          render={
+            <Button
+              aria-describedby={ariaDescribedBy}
+              aria-invalid={ariaInvalid}
+              variant="outline"
+              className={cn(
+                "min-w-0 flex-1 justify-between bg-transparent px-3 py-2 font-normal hover:bg-transparent focus:z-10",
+                className,
+                disabled && "opacity-50"
+              )}
+              disabled={disabled}
+            >
+              <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                <FlagComponent
+                  country={value}
+                  countryName={value ? en[value] : undefined}
+                />
+                <span className="flex-1 truncate text-left">
+                  {value ? en[value] : placeholder}
+                </span>
+              </div>
+              <span className="sr-only">
+                <ComboboxValue />
               </span>
-            </div>
-            <span className="sr-only">
-              <ComboboxValue />
-            </span>
+            </Button>
+          }
+        />
+        {value ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Clear country"
+            disabled={disabled}
+            onClick={() => onChange(undefined)}
+          >
+            <XIcon aria-hidden="true" />
           </Button>
-        }
-      />
-      <ComboboxContent className="w-[300px] p-0">
+        ) : null}
+      </ButtonGroup>
+      <ComboboxContent className="min-w-0 p-0">
         <ComboboxInput
           placeholder="Search country..."
           value={searchValue}

@@ -1,10 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { GlobeIcon } from "lucide-react"
+import { GlobeIcon, XIcon } from "lucide-react"
 
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   Combobox,
   ComboboxContent,
@@ -94,38 +95,48 @@ export function TimezoneSelect({
     <Combobox
       items={filteredTimezones.map((timezone) => timezone.value)}
       value={value ?? null}
-      onValueChange={(tz) => {
-        if (tz) {
-          onChange(tz)
-        }
-      }}
+      onValueChange={(tz) => onChange(tz ?? "")}
     >
-      <ComboboxTrigger
-        render={
-          <Button
-            aria-describedby={ariaDescribedBy}
-            aria-invalid={ariaInvalid}
-            variant="outline"
-            className={cn(
-              "flex w-full justify-between bg-transparent px-3 py-2 font-normal hover:bg-transparent focus:z-10",
-              className,
-              disabled && "opacity-50"
-            )}
-            disabled={disabled}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <GlobeIcon className="size-4 shrink-0 opacity-60" />
-              <span className="flex-1 truncate text-left">
-                {value ? value.replace(/_/g, " ") : placeholder}
+      <ButtonGroup className="w-full" aria-label="Timezone selection">
+        <ComboboxTrigger
+          render={
+            <Button
+              aria-describedby={ariaDescribedBy}
+              aria-invalid={ariaInvalid}
+              variant="outline"
+              className={cn(
+                "min-w-0 flex-1 justify-between bg-transparent px-3 py-2 font-normal hover:bg-transparent focus:z-10",
+                className,
+                disabled && "opacity-50"
+              )}
+              disabled={disabled}
+            >
+              <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                <GlobeIcon className="size-4 shrink-0 opacity-60" />
+                <span className="flex-1 truncate text-left">
+                  {value ? value.replace(/_/g, " ") : placeholder}
+                </span>
+              </div>
+              <span className="sr-only">
+                <ComboboxValue />
               </span>
-            </div>
-            <span className="sr-only">
-              <ComboboxValue />
-            </span>
+            </Button>
+          }
+        />
+        {value ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Clear timezone"
+            disabled={disabled}
+            onClick={() => onChange("")}
+          >
+            <XIcon aria-hidden="true" />
           </Button>
-        }
-      />
-      <ComboboxContent className="w-[300px] p-0">
+        ) : null}
+      </ButtonGroup>
+      <ComboboxContent className="min-w-0 p-0">
         <ComboboxInput
           placeholder="Search timezone..."
           value={searchValue}

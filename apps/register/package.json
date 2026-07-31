@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@tabler/icons-react": "^3.46.0",
     "@workspace/ui": "*",
     "framer-motion": "^12.43.0",
     "google-auth-library": "^10.9.1",

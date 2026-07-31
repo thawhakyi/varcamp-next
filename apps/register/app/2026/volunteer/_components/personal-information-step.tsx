@@ -1,8 +1,5 @@
 import type { ReactNode } from "react"
-import type {
-  Country,
-  Value as PhoneNumberValue,
-} from "react-phone-number-input"
+import type { Country } from "react-phone-number-input"
 
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -20,7 +17,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@workspace/ui/components/reui/field"
-import { PhoneInput } from "@workspace/ui/components/reui/phone-input"
 import { TimezoneSelect } from "@workspace/ui/components/reui/timezone-select"
 import { Textarea } from "@workspace/ui/components/textarea"
 
@@ -30,12 +26,13 @@ import type {
 } from "@/lib/volunteer-registration-schema"
 
 import { BorderDecorations } from "./border-decorations"
+import { ContactChannel } from "./contact-channel"
 
 type PersonalInformationStepProps = {
   country: Country | undefined
   errors: RegistrationFieldErrors
   information: PersonalInformation
-  onCountryChange: (country: Country) => void
+  onCountryChange: (country: Country | undefined) => void
   onInformationChange: (key: keyof PersonalInformation, value: string) => void
   timezone: string
   onTimezoneChange: (timezone: string) => void
@@ -93,7 +90,7 @@ export function PersonalInformationStep({
           htmlFor="fullName"
           label="Full Name"
           description="Enter the name you would like us to use."
-
+          contentClassName="sm:max-w-xs"
           error={getError("fullName")}
           errorId="fullName-error"
         >
@@ -117,8 +114,8 @@ export function PersonalInformationStep({
         <RegistrationField
           htmlFor="username"
           label="Username"
-          description="Choose how your name will appear."
-
+          description="Choose how can we call you."
+          contentClassName="sm:max-w-xs"
           error={getError("username")}
           errorId="username-error"
         >
@@ -129,7 +126,7 @@ export function PersonalInformationStep({
             <InputGroupInput
               id="username"
               name="username"
-              placeholder="johndoe"
+              placeholder="mr. johndoe"
               value={information.username}
               maxLength={60}
               onChange={(event) =>
@@ -148,7 +145,7 @@ export function PersonalInformationStep({
           htmlFor="email"
           label="Email"
           description="We will use this for registration updates."
-
+          contentClassName="sm:max-w-xs"
           error={getError("email")}
           errorId="email-error"
         >
@@ -156,7 +153,7 @@ export function PersonalInformationStep({
             id="email"
             name="email"
             type="email"
-            placeholder="john@example.com"
+            placeholder="john@var.camp"
             value={information.email}
             maxLength={254}
             onChange={(event) =>
@@ -169,29 +166,30 @@ export function PersonalInformationStep({
         </RegistrationField>
 
         <RegistrationField
-          htmlFor="phone"
-          label="Phone Number"
-          description="Include a number where the team can reach you."
-
-          error={getError("phone")}
-          errorId="phone-error"
+          htmlFor="contactChannel"
+          label="Preferred Contact Channel"
+          description="Choose the easiest way for the team to reach you."
+          error={getError("contactChannel") || getError("contactValue")}
+          errorId="contactValue-error"
         >
-          <PhoneInput
-            id="phone"
-            name="phone"
-            defaultCountry="MM"
-            value={information.phone as PhoneNumberValue}
-            onChange={(value) => onInformationChange("phone", value)}
-            required
-            aria-invalid={Boolean(getError("phone"))}
-            aria-describedby={getError("phone") ? "phone-error" : undefined}
+          <ContactChannel
+            channel={information.contactChannel}
+            value={information.contactValue}
+            channelError={getError("contactChannel")}
+            valueError={getError("contactValue")}
+            onChannelChange={(channel) =>
+              onInformationChange("contactChannel", channel)
+            }
+            onValueChange={(value) =>
+              onInformationChange("contactValue", value)
+            }
           />
         </RegistrationField>
 
         <RegistrationField
           label="Country"
           description="Select the country where you currently live."
-
+          contentClassName="sm:max-w-xs"
           error={getError("country")}
           errorId="country-error"
         >
@@ -207,7 +205,7 @@ export function PersonalInformationStep({
           htmlFor="city"
           label="City"
           description="Enter your current city."
-
+          contentClassName="sm:max-w-xs"
           error={getError("city")}
           errorId="city-error"
         >
@@ -229,7 +227,7 @@ export function PersonalInformationStep({
         <RegistrationField
           label="Timezone"
           description="Helps us coordinate meetings and volunteer work."
-          contentClassName="w-full sm:max-w-sm"
+          contentClassName="w-full sm:max-w-xs"
           error={getError("timezone")}
           errorId="timezone-error"
         >

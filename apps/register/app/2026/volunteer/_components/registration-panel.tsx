@@ -41,7 +41,7 @@ type RegistrationPanelProps = {
     agreement: CommitmentAgreementKey,
     accepted: boolean
   ) => void
-  onCountryChange: (country: Country) => void
+  onCountryChange: (country: Country | undefined) => void
   onPersonalInformationChange: (
     key: keyof PersonalInformation,
     value: string
@@ -86,16 +86,16 @@ export function RegistrationPanel({
   return (
     <main
       aria-labelledby="registration-step-heading"
-      className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col items-center lg:py-5"
+      className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col items-center"
     >
-      <StepperPanel className="flex h-full max-w-5xl flex-col overflow-hidden">
-        <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-6">
-          <div className="mx-auto w-full max-w-3xl">
+      <StepperPanel className="flex h-full flex-col overflow-hidden">
+        <div className="no-scrollbar flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-5xl">
             {registrationSteps.map((step, index) => (
               <StepperContent
                 key={step.title}
                 value={index + 1}
-                className="h-full"
+                className="h-full p-4"
               >
                 <motion.div
                   initial={
@@ -175,7 +175,7 @@ function StepHeading({ currentStep, title }: StepHeadingProps) {
       <BorderDecorations />
 
       <div className="flex min-w-0 flex-col gap-2">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground">
           Step {currentStep} of {registrationSteps.length}
         </span>
         <h1
@@ -203,7 +203,7 @@ function RegistrationActions({
   const isLastStep = activeStep === registrationSteps.length
 
   return (
-    <div className="w-full shrink-0 border-t border-border/60 bg-background px-5 py-4 sm:px-8 lg:px-10 xl:px-12">
+    <div className="mx-auto w-full max-w-5xl shrink-0 border-t border-border/60 bg-background/75 px-4 py-4 backdrop-blur-xl sm:px-8 lg:px-6">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4">
         <Button
           type="button"

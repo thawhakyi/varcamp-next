@@ -8,6 +8,43 @@ export const registrationSteps = [
 
 export type RegistrationStep = (typeof registrationSteps)[number]
 
+export const contactChannels = [
+  {
+    id: "phone",
+    label: "Phone",
+    prefix: "tel:",
+    linkPrefix: "tel:",
+    placeholder: "+95 9 123 456 789",
+    inputMode: "tel",
+  },
+  {
+    id: "facebook",
+    label: "Facebook Messenger",
+    prefix: "facebook.com/",
+    linkPrefix: "https://facebook.com/",
+    placeholder: "your.username",
+    inputMode: "text",
+  },
+  {
+    id: "telegram",
+    label: "Telegram",
+    prefix: "t.me/",
+    linkPrefix: "https://t.me/",
+    placeholder: "your_username",
+    inputMode: "text",
+  },
+  {
+    id: "discord",
+    label: "Discord",
+    prefix: "discord.com/users/",
+    linkPrefix: "https://discord.com/users/",
+    placeholder: "Your user ID",
+    inputMode: "numeric",
+  },
+] as const
+
+export type ContactChannelId = (typeof contactChannels)[number]["id"]
+
 export const volunteerTeams = [
   {
     id: "event-coordination",
@@ -180,14 +217,14 @@ export const technicalReadinessFields = [
   {
     type: "select",
     key: "operatingSystem",
-    label: "Which operating system do you use?",
+    label: "Which operating system do you use? (Optional)",
     placeholder: "Select your operating system",
     options: operatingSystemOptions,
   },
   {
     type: "select",
     key: "browser",
-    label: "Which browser do you use?",
+    label: "Which browser do you use? (Optional)",
     placeholder: "Select your browser",
     options: browserOptions,
   },

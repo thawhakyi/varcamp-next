@@ -4,6 +4,7 @@ import { JWT } from "google-auth-library"
 
 import {
   browserOptions,
+  contactChannels,
   operatingSystemOptions,
   volunteerSkillOptions,
   volunteerTeams,
@@ -17,7 +18,7 @@ export const volunteerRegistrationHeaders = [
   "Full Name",
   "Username",
   "Email",
-  "Phone",
+  "Contact Channel",
   "Country Code",
   "City",
   "Timezone",
@@ -56,6 +57,9 @@ const operatingSystemNames: ReadonlyMap<string, string> = new Map(
 )
 const browserNames: ReadonlyMap<string, string> = new Map(
   browserOptions.map((browser) => [browser.value, browser.label])
+)
+const contactChannelDetails = new Map(
+  contactChannels.map((channel) => [channel.id, channel])
 )
 
 type GoogleSheetsConfig = {
@@ -148,6 +152,15 @@ function getTeamName(teamId: string) {
   return teamId ? teamNames.get(teamId) || teamId : ""
 }
 
+function getContactChannel(
+  channelId: (typeof contactChannels)[number]["id"],
+  value: string
+) {
+  const channel = contactChannelDetails.get(channelId)
+
+  return channel ? `${channel.label}: ${channel.linkPrefix}${value}` : value
+}
+
 function createRegistrationRow(
   submission: VolunteerRegistrationSubmission,
   clientIp: string
@@ -164,7 +177,10 @@ function createRegistrationRow(
     personalInformation.fullName,
     personalInformation.username,
     personalInformation.email,
-    personalInformation.phone,
+    getContactChannel(
+      personalInformation.contactChannel,
+      personalInformation.contactValue
+    ),
     personalInformation.country,
     personalInformation.city,
     personalInformation.timezone,

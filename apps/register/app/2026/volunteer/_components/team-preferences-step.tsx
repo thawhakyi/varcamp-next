@@ -9,6 +9,13 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@workspace/ui/components/combobox"
+import {
   Field,
   FieldContent,
   FieldDescription,
@@ -18,14 +25,6 @@ import {
   FieldLegend,
   FieldSet,
 } from "@workspace/ui/components/reui/field"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 
 import type { RegistrationFieldErrors } from "@/lib/volunteer-registration-schema"
 
@@ -55,88 +54,108 @@ export function TeamPreferencesStep({
         <FieldLegend>Rank your preferred teams</FieldLegend>
         <FieldDescription>
           Pick up to three teams in the order you would most like to help. The
-          same team list is shown on the right for reference.
+          tasks for each team is shown below.
         </FieldDescription>
         <FieldGroup
           data-layout="columns"
           className="grid grid-cols-1 lg:grid-cols-3"
         >
-          {teamPriorityFields.map((field) => (
-            <Field
-              key={field.key}
-              orientation="vertical"
-              data-invalid={Boolean(errors[`teamPriorities.${field.key}`])}
-            >
-              <FieldLabel htmlFor={`${field.key}Priority`}>
-                {field.label}
-              </FieldLabel>
-              <FieldContent>
-                <ButtonGroup
-                  className="w-full"
-                  aria-label={`${field.label} team selection`}
-                >
-                  <Select
-                    value={priorities[field.key]}
-                    onValueChange={(value) =>
-                      onPriorityChange(field.key, value)
-                    }
+          {teamPriorityFields.map((field) => {
+            const selectedTeam = volunteerTeams.find(
+              (team) => team.id === priorities[field.key]
+            )
+
+            return (
+              <Field
+                key={field.key}
+                orientation="vertical"
+                data-invalid={Boolean(errors[`teamPriorities.${field.key}`])}
+              >
+                <FieldLabel htmlFor={`${field.key}Priority`}>
+                  {field.label}
+                </FieldLabel>
+                <FieldContent>
+                  <ButtonGroup
+                    className="w-full"
+                    aria-label={`${field.label} team selection`}
                   >
-                    <SelectTrigger
-                      id={`${field.key}Priority`}
-                      className="min-w-0 flex-1"
-                      aria-invalid={Boolean(
-                        errors[`teamPriorities.${field.key}`]
-                      )}
-                      aria-describedby={
-                        errors[`teamPriorities.${field.key}`]
-                          ? `${field.key}Priority-error`
-                          : undefined
+                    <Combobox
+                      items={volunteerTeams.map((team) => team.id)}
+                      value={priorities[field.key] || null}
+                      onValueChange={(value) =>
+                        onPriorityChange(field.key, value ?? "")
                       }
                     >
-                      <SelectValue placeholder={field.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                      <SelectGroup>
-                        {volunteerTeams.map((team) => {
-                          const selectedInAnotherPriority = Object.entries(
-                            priorities
-                          ).some(
-                            ([priorityKey, selectedTeam]) =>
-                              priorityKey !== field.key &&
-                              selectedTeam === team.id
-                          )
+                      <ComboboxTrigger
+                        render={
+                          <Button
+                            id={`${field.key}Priority`}
+                            variant="outline"
+                            className="min-w-0 flex-1 justify-between bg-transparent px-3 font-normal hover:bg-transparent"
+                            aria-invalid={Boolean(
+                              errors[`teamPriorities.${field.key}`]
+                            )}
+                            aria-describedby={
+                              errors[`teamPriorities.${field.key}`]
+                                ? `${field.key}Priority-error`
+                                : undefined
+                            }
+                          >
+                            {selectedTeam ? (
+                              <span className="truncate text-left">
+                                {selectedTeam.name}
+                              </span>
+                            ) : (
+                              <span className="truncate text-left text-muted-foreground">
+                                {field.placeholder}
+                              </span>
+                            )}
+                          </Button>
+                        }
+                      />
+                      <ComboboxContent>
+                        <ComboboxList>
+                          {volunteerTeams.map((team) => {
+                            const selectedInAnotherPriority = Object.entries(
+                              priorities
+                            ).some(
+                              ([priorityKey, selectedTeam]) =>
+                                priorityKey !== field.key &&
+                                selectedTeam === team.id
+                            )
 
-                          return (
-                            <SelectItem
-                              key={team.id}
-                              value={team.id}
-                              disabled={selectedInAnotherPriority}
-                            >
-                              {team.name}
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  {priorities[field.key] && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      aria-label={`Clear ${field.label.toLowerCase()}`}
-                      onClick={() => onPriorityChange(field.key, "")}
-                    >
-                      <XIcon />
-                    </Button>
-                  )}
-                </ButtonGroup>
-                <FieldError id={`${field.key}Priority-error`}>
-                  {errors[`teamPriorities.${field.key}`]}
-                </FieldError>
-              </FieldContent>
-            </Field>
-          ))}
+                            return (
+                              <ComboboxItem
+                                key={team.id}
+                                value={team.id}
+                                disabled={selectedInAnotherPriority}
+                              >
+                                {team.name}
+                              </ComboboxItem>
+                            )
+                          })}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    </Combobox>
+                    {priorities[field.key] && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        aria-label={`Clear ${field.label.toLowerCase()}`}
+                        onClick={() => onPriorityChange(field.key, "")}
+                      >
+                        <XIcon />
+                      </Button>
+                    )}
+                  </ButtonGroup>
+                  <FieldError id={`${field.key}Priority-error`}>
+                    {errors[`teamPriorities.${field.key}`]}
+                  </FieldError>
+                </FieldContent>
+              </Field>
+            )
+          })}
         </FieldGroup>
       </FieldSet>
 
@@ -171,7 +190,7 @@ function TeamReference() {
             className="px-4 last:border-b-0"
           >
             <AccordionTrigger className="gap-4 py-4 text-left hover:no-underline">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-foreground md:text-base">
                 {team.name}
               </span>
             </AccordionTrigger>

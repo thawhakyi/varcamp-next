@@ -20,6 +20,7 @@ import {
 } from "@workspace/ui/components/reui/stepper"
 import { Progress } from "@workspace/ui/components/progress"
 import { cn } from "@workspace/ui/lib/utils"
+import { BorderDecorations } from "./border-decorations"
 
 import { registrationSteps } from "./volunteer-data"
 
@@ -42,30 +43,33 @@ export function RegistrationSidebar({
     registrationSteps[activeStep - 1] ?? registrationSteps[0]
 
   return (
-    <div className="relative z-10 flex w-full shrink-0 px-4 py-4 sm:px-5 sm:py-5 lg:h-full lg:w-88 lg:overflow-y-auto lg:px-5 lg:py-5">
-      <div className="relative isolate flex w-full flex-col overflow-hidden rounded-2xl bg-card px-4 py-4 text-foreground ring-1 ring-border sm:px-5 sm:py-5 lg:min-h-full">
-        <header className="flex min-h-9 items-center justify-between gap-3">
-          <VarCampLogoHorizontal
-            className="h-6 w-auto text-foreground"
-            title="VarCamp"
+    <div className="p-4 lg:w-88">
+      <div className="relative z-10 flex w-full shrink-0 lg:h-full lg:min-h-full">
+        <BorderDecorations />
+        <div className="relative isolate flex w-full flex-col overflow-hidden rounded-2xl bg-card p-4 text-foreground ring-1 ring-border">
+          <header className="flex min-h-9 items-center justify-between gap-3">
+            <VarCampLogoHorizontal
+              className="h-6 w-auto text-foreground"
+              title="VarCamp"
+            />
+            <ThemeToggle />
+          </header>
+
+          <MobileStepPicker
+            activeStep={activeStep}
+            activeStepTitle={activeStepData.title}
+            activeStepDescription={activeStepData.description}
+            openItem={mobileStepPicker}
+            onOpenItemChange={onMobileStepPickerChange}
+            onStepChange={onStepChange}
+            shouldReduceMotion={shouldReduceMotion}
           />
-          <ThemeToggle />
-        </header>
 
-        <MobileStepPicker
-          activeStep={activeStep}
-          activeStepTitle={activeStepData.title}
-          activeStepDescription={activeStepData.description}
-          openItem={mobileStepPicker}
-          onOpenItemChange={onMobileStepPickerChange}
-          onStepChange={onStepChange}
-          shouldReduceMotion={shouldReduceMotion}
-        />
-
-        <DesktopStepNavigation
-          activeStep={activeStep}
-          shouldReduceMotion={shouldReduceMotion}
-        />
+          <DesktopStepNavigation
+            activeStep={activeStep}
+            shouldReduceMotion={shouldReduceMotion}
+          />
+        </div>
       </div>
     </div>
   )
@@ -228,9 +232,9 @@ function StepStatus({
       aria-hidden="true"
       className={cn(
         "relative isolate flex shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,box-shadow,scale] duration-300 ease-out [&_svg]:size-3",
-        size === "lg" ? "size-7" : "size-5",
+        size === "lg" ? "size-6" : "size-5",
         isActive
-          ? "scale-105 border-primary bg-primary text-primary-foreground shadow-sm ring-4 ring-primary/15"
+          ? "scale-105 border-primary bg-primary text-primary-foreground shadow-sm ring-4 ring-primary/5"
           : isPast
             ? "border-primary bg-primary text-primary-foreground"
             : "border-border bg-background text-muted-foreground"
@@ -368,7 +372,7 @@ function DesktopStepNavigation({
                   >
                     <StepperTitle
                       className={cn(
-                        "text-sm transition-colors duration-300",
+                        "text-sm transition-colors duration-300 md:text-base",
                         isActive
                           ? "font-semibold text-foreground dark:text-primary"
                           : isPast

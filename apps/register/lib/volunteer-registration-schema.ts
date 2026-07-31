@@ -4,6 +4,8 @@ import { isValidPhoneNumber } from "libphonenumber-js"
 import {
   browserOptions,
   commitmentAgreementFields,
+  contactChannels,
+  type ContactChannelId,
   operatingSystemOptions,
   volunteerSkillOptions,
   volunteerTeams,
@@ -21,6 +23,10 @@ const operatingSystemIds: ReadonlySet<string> = new Set(
 const browserIds: ReadonlySet<string> = new Set(
   browserOptions.map((browser) => browser.value)
 )
+const contactChannelIds = contactChannels.map((channel) => channel.id) as [
+  ContactChannelId,
+  ...ContactChannelId[],
+]
 
 const requiredText = (label: string, maxLength: number) =>
   z
@@ -49,10 +55,10 @@ export const personalInformationSchema = z
       .min(1, "Email is required.")
       .email("Enter a valid email address.")
       .max(254, "Email is too long."),
-    phone: requiredText("Phone number", 30).refine(
-      (phone) => isValidPhoneNumber(phone),
-      "Enter a valid international phone number."
-    ),
+    contactChannel: z.enum(contactChannelIds, {
+      message: "Choose a contact channel.",
+    }),
+    contactValue: requiredText("Contact details", 120),
     country: z
       .string()
       .length(2, "Select your country.")
@@ -62,6 +68,46 @@ export const personalInformationSchema = z
     bio: z.string().trim().max(1500, "Short bio is too long."),
   })
   .strict()
+  .superRefine(({ contactChannel, contactValue }, context) => {
+    if (!contactValue) {
+      return
+    }
+
+    const addContactIssue = (message: string) => {
+      context.addIssue({
+        code: "custom",
+        message,
+        path: ["contactValue"],
+      })
+    }
+
+    if (contactChannel === "phone") {
+      if (!isValidPhoneNumber(contactValue)) {
+        addContactIssue("Enter a valid international phone number.")
+      }
+      return
+    }
+
+    if (contactChannel === "facebook") {
+      if (!/^[a-zA-Z0-9.]+$/.test(contactValue)) {
+        addContactIssue("Enter the username from your Facebook profile link.")
+      }
+      return
+    }
+
+    if (contactChannel === "telegram") {
+      if (!/^[a-zA-Z0-9_]+$/.test(contactValue)) {
+        addContactIssue("Enter your Telegram username without @.")
+      }
+      return
+    }
+
+    if (contactChannel === "discord") {
+      if (!/^\d{17,20}$/.test(contactValue)) {
+        addContactIssue("Enter your 17–20 digit Discord user ID.")
+      }
+    }
+  })
 
 export const teamPrioritiesSchema = z
   .object({
@@ -110,12 +156,16 @@ export const technicalReadinessSchema = z
     operatingSystem: z
       .string()
       .refine(
-        (operatingSystem) => operatingSystemIds.has(operatingSystem),
-        "Select your operating system."
+        (operatingSystem) =>
+          operatingSystem === "" || operatingSystemIds.has(operatingSystem),
+        "Select a valid operating system."
       ),
     browser: z
       .string()
-      .refine((browser) => browserIds.has(browser), "Select your browser."),
+      .refine(
+        (browser) => browser === "" || browserIds.has(browser),
+        "Select a valid browser."
+      ),
     workAdventureExperience: z.enum(["yes", "no"], {
       message: "Choose Yes or No.",
     }),
@@ -156,7 +206,8 @@ export type PersonalInformation = {
   fullName: string
   username: string
   email: string
-  phone: string
+  contactChannel: ContactChannelId | ""
+  contactValue: string
   city: string
   bio: string
 }

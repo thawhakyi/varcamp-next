@@ -9,8 +9,8 @@
 @source "../**/*.{ts,tsx}";
 
 .typeset-docs {
-  --typeset-font-body: var(--font-geist);
-  --typeset-font-heading: var(--font-inter);
+  --typeset-font-body: var(--font-inter);
+  --typeset-font-heading: var(--font-geist);
   --typeset-font-mono: var(--font-geist-mono);
   --typeset-size: 16px;
   --typeset-leading: 1.75;
@@ -19,7 +19,7 @@
 
 @theme inline {
   --font-heading: var(--font-inter);
-  --font-sans: var(--font-geist);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
