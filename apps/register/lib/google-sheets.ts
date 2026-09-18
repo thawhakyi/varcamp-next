@@ -3,17 +3,25 @@ import "server-only"
 import { JWT } from "google-auth-library"
 
 import {
+  browserOptions as organizerBrowserOptions,
+  contactChannels as organizerContactChannels,
+  operatingSystemOptions as organizerOperatingSystemOptions,
+  organizerSkillOptions,
+  organizerTeams,
+} from "@/app/2026/organizer/_components/organizer-data"
+import {
   browserOptions,
   contactChannels,
   operatingSystemOptions,
   volunteerSkillOptions,
   volunteerTeams,
 } from "@/app/2026/volunteer/_components/volunteer-data"
+import type { OrganizerRegistrationSubmission } from "@/lib/organizer-registration-schema"
 import type { VolunteerRegistrationSubmission } from "@/lib/volunteer-registration-schema"
 
 const sheetsScope = "https://www.googleapis.com/auth/spreadsheets"
 
-export const volunteerRegistrationHeaders = [
+export const registrationHeaders = [
   "Submitted At (UTC)",
   "Full Name",
   "Username",
@@ -43,24 +51,86 @@ export const volunteerRegistrationHeaders = [
   "Submitter IP",
 ] as const
 
-const teamNames: ReadonlyMap<string, string> = new Map(
-  volunteerTeams.map((team) => [team.id, team.name])
-)
-const skillNames: ReadonlyMap<string, string> = new Map(
-  volunteerSkillOptions.map((skill) => [skill.id, skill.label])
-)
-const operatingSystemNames: ReadonlyMap<string, string> = new Map(
-  operatingSystemOptions.map((operatingSystem) => [
-    operatingSystem.value,
-    operatingSystem.label,
-  ])
-)
-const browserNames: ReadonlyMap<string, string> = new Map(
-  browserOptions.map((browser) => [browser.value, browser.label])
-)
-const contactChannelDetails = new Map(
-  contactChannels.map((channel) => [channel.id, channel])
-)
+export const volunteerRegistrationHeaders = registrationHeaders
+
+type RegistrationKind = "volunteer" | "organizer"
+
+type RegistrationSubmission =
+  | VolunteerRegistrationSubmission
+  | OrganizerRegistrationSubmission
+
+type RegistrationLookups = {
+  browserNames: ReadonlyMap<string, string>
+  contactChannelDetails: ReadonlyMap<
+    string,
+    { label: string; linkPrefix?: string }
+  >
+  operatingSystemNames: ReadonlyMap<string, string>
+  skillNames: ReadonlyMap<string, string>
+  teamNames: ReadonlyMap<string, string>
+}
+
+type RegistrationSource = {
+  browsers: readonly { value: string; label: string }[]
+  channels: readonly { id: string; label: string; linkPrefix?: string }[]
+  operatingSystems: readonly { value: string; label: string }[]
+  skills: readonly { id: string; label: string }[]
+  teams: readonly { id: string; name: string }[]
+}
+
+function createRegistrationLookups(
+  source: RegistrationSource
+): RegistrationLookups {
+  return {
+    browserNames: new Map(
+      source.browsers.map((browser) => [browser.value, browser.label])
+    ),
+    contactChannelDetails: new Map(
+      source.channels.map((channel) => [channel.id, channel])
+    ),
+    operatingSystemNames: new Map(
+      source.operatingSystems.map((operatingSystem) => [
+        operatingSystem.value,
+        operatingSystem.label,
+      ])
+    ),
+    skillNames: new Map(source.skills.map((skill) => [skill.id, skill.label])),
+    teamNames: new Map(source.teams.map((team) => [team.id, team.name])),
+  }
+}
+
+const registrationLookups: Record<RegistrationKind, RegistrationLookups> = {
+  volunteer: createRegistrationLookups({
+    browsers: browserOptions,
+    channels: contactChannels,
+    operatingSystems: operatingSystemOptions,
+    skills: volunteerSkillOptions,
+    teams: volunteerTeams,
+  }),
+  organizer: createRegistrationLookups({
+    browsers: organizerBrowserOptions,
+    channels: organizerContactChannels,
+    operatingSystems: organizerOperatingSystemOptions,
+    skills: organizerSkillOptions,
+    teams: organizerTeams,
+  }),
+}
+
+// Both registration forms live in the same spreadsheet and are separated by
+// sheet tab. Only the tab name differs between the two ranges.
+const registrationRangeSettings: Record<
+  RegistrationKind,
+  { environmentVariable: string; defaultRange: string }
+> = {
+  volunteer: {
+    environmentVariable: "GOOGLE_SHEETS_RANGE",
+    defaultRange: "Volunteer Registrations!A:AA",
+  },
+  organizer: {
+    environmentVariable: "GOOGLE_SHEETS_ORGANIZER_RANGE",
+    defaultRange: "Organizer Registrations!A:AA",
+  },
+}
 
 type GoogleSheetsConfig = {
   clientEmail: string
@@ -69,15 +139,16 @@ type GoogleSheetsConfig = {
   range: string
 }
 
-function getGoogleSheetsConfig(): GoogleSheetsConfig {
+function getGoogleSheetsConfig(kind: RegistrationKind): GoogleSheetsConfig {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
   const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
     /\\n/g,
     "\n"
   )
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+  const { environmentVariable, defaultRange } = registrationRangeSettings[kind]
   const configuredRange =
-    process.env.GOOGLE_SHEETS_RANGE || "Volunteer Registrations!A:AA"
+    process.env[environmentVariable]?.trim() || defaultRange
   const range = getRegistrationRange(configuredRange)
 
   if (!clientEmail || !privateKey || !spreadsheetId) {
@@ -128,8 +199,8 @@ async function ensureHeaderRow(
 
   const currentHeaders = existingHeader.data.values?.[0] ?? []
   const headersAreCurrent =
-    currentHeaders.length === volunteerRegistrationHeaders.length &&
-    volunteerRegistrationHeaders.every(
+    currentHeaders.length === registrationHeaders.length &&
+    registrationHeaders.every(
       (header, index) => currentHeaders[index] === header
     )
 
@@ -143,34 +214,35 @@ async function ensureHeaderRow(
     params: { valueInputOption: "RAW" },
     data: {
       majorDimension: "ROWS",
-      values: [[...volunteerRegistrationHeaders]],
+      values: [[...registrationHeaders]],
     },
   })
 }
 
-function getTeamName(teamId: string) {
-  return teamId ? teamNames.get(teamId) || teamId : ""
+function getTeamName(lookups: RegistrationLookups, teamId: string) {
+  return teamId ? lookups.teamNames.get(teamId) || teamId : ""
 }
 
 function getContactChannel(
-  channelId: (typeof contactChannels)[number]["id"],
+  lookups: RegistrationLookups,
+  channelId: string,
   value: string
 ) {
-  const channel = contactChannelDetails.get(channelId)
+  const channel = lookups.contactChannelDetails.get(channelId)
 
   if (!channel) {
     return value
   }
 
-  const linkPrefix = "linkPrefix" in channel ? channel.linkPrefix : ""
-
-  return `${channel.label}: ${linkPrefix}${value}`
+  return `${channel.label}: ${channel.linkPrefix ?? ""}${value}`
 }
 
 function createRegistrationRow(
-  submission: VolunteerRegistrationSubmission,
+  kind: RegistrationKind,
+  submission: RegistrationSubmission,
   clientIp: string
 ) {
+  const lookups = registrationLookups[kind]
   const {
     personalInformation,
     selectedSkills,
@@ -184,6 +256,7 @@ function createRegistrationRow(
     personalInformation.username,
     personalInformation.email,
     getContactChannel(
+      lookups,
       personalInformation.contactChannel,
       personalInformation.contactValue
     ),
@@ -191,19 +264,22 @@ function createRegistrationRow(
     personalInformation.city,
     personalInformation.timezone,
     personalInformation.bio,
-    getTeamName(teamPriorities.first),
-    getTeamName(teamPriorities.second),
-    getTeamName(teamPriorities.third),
-    selectedSkills.map((skill) => skillNames.get(skill) || skill).join(", "),
+    getTeamName(lookups, teamPriorities.first),
+    getTeamName(lookups, teamPriorities.second),
+    getTeamName(lookups, teamPriorities.third),
+    selectedSkills
+      .map((skill) => lookups.skillNames.get(skill) || skill)
+      .join(", "),
     technicalReadiness.computerAccess,
     technicalReadiness.stableInternet,
     // Keep the removed microphone and camera columns blank so historical rows
     // remain aligned with the existing 26-column spreadsheet.
     "",
     "",
-    operatingSystemNames.get(technicalReadiness.operatingSystem) ||
+    lookups.operatingSystemNames.get(technicalReadiness.operatingSystem) ||
       technicalReadiness.operatingSystem,
-    browserNames.get(technicalReadiness.browser) || technicalReadiness.browser,
+    lookups.browserNames.get(technicalReadiness.browser) ||
+      technicalReadiness.browser,
     technicalReadiness.workAdventureExperience,
     // Keep the six agreement columns for historical alignment, but do not
     // store new Commitment and Agreement step values.
@@ -217,12 +293,13 @@ function createRegistrationRow(
   ]
 }
 
-export async function appendVolunteerRegistration(
-  submission: VolunteerRegistrationSubmission,
+async function appendRegistration(
+  kind: RegistrationKind,
+  submission: RegistrationSubmission,
   clientIp: string
 ) {
   const { clientEmail, privateKey, spreadsheetId, range } =
-    getGoogleSheetsConfig()
+    getGoogleSheetsConfig(kind)
   const auth = new JWT({
     email: clientEmail,
     key: privateKey,
@@ -240,7 +317,21 @@ export async function appendVolunteerRegistration(
     },
     data: {
       majorDimension: "ROWS",
-      values: [createRegistrationRow(submission, clientIp)],
+      values: [createRegistrationRow(kind, submission, clientIp)],
     },
   })
+}
+
+export async function appendVolunteerRegistration(
+  submission: VolunteerRegistrationSubmission,
+  clientIp: string
+) {
+  await appendRegistration("volunteer", submission, clientIp)
+}
+
+export async function appendOrganizerRegistration(
+  submission: OrganizerRegistrationSubmission,
+  clientIp: string
+) {
+  await appendRegistration("organizer", submission, clientIp)
 }

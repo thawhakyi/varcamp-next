@@ -1,13 +1,14 @@
 # Google Sheets setup
 
-The volunteer registration endpoint writes directly to the Google Sheets API
-with a service account. Credentials are only read by the register app's server.
+The volunteer and organizer registration endpoints write directly to the Google
+Sheets API with a service account. Credentials are only read by the register
+app's server.
 
 1. Create or select a Google Cloud project.
 2. Enable the Google Sheets API for that project.
 3. Create a service account and a JSON key.
-4. Create a Google spreadsheet with a sheet tab named
-   `Volunteer Registrations`.
+4. Create a Google spreadsheet with one sheet tab named
+   `Volunteer Registrations` and one named `Organizer Registrations`.
 5. Share that spreadsheet with the service account email as an Editor.
 6. Copy `.env.example` to `.env.local` inside `apps/register` and replace the
    example values with the service account email, private key, and spreadsheet
@@ -18,9 +19,20 @@ with a service account. Credentials are only read by the register app's server.
    npm run dev --workspace register
    ```
 
-The first successful submission creates the 27-column header row if the sheet
-is empty. Later submissions are appended as new rows. If you use a different
-sheet tab, update `GOOGLE_SHEETS_RANGE`; keep the range at 27 columns (`A:AA`).
+Both forms use the same `GOOGLE_SHEETS_SPREADSHEET_ID` and are separated by
+sheet tab only:
+
+| Form      | Range variable                 | Default tab                |
+| --------- | ------------------------------ | -------------------------- |
+| Volunteer | `GOOGLE_SHEETS_RANGE`          | `Volunteer Registrations`  |
+| Organizer | `GOOGLE_SHEETS_ORGANIZER_RANGE`| `Organizer Registrations`  |
+
+Both ranges are optional; the defaults above are used when they are unset. If
+you use different sheet tabs, update those variables and keep each range at 27
+columns (`A:AA`).
+
+The first successful submission creates the 27-column header row if the tab is
+empty. Later submissions are appended as new rows.
 
 The six Commitment and Agreement values are validated before submission but
 are not stored in new spreadsheet rows. Their existing columns remain blank to
@@ -41,11 +53,14 @@ Create a Cloudflare WAF rate limiting rule with this expression:
 
 ```text
 (http.request.method eq "POST"
- and http.request.uri.path eq "/api/volunteer-registrations")
+ and (http.request.uri.path eq "/api/volunteer-registrations"
+      or http.request.uri.path eq "/api/organizer-registrations"))
 ```
 
 Set the rule to five requests per IP per hour with a one-hour block duration.
-The API also enforces the values in `VOLUNTEER_RATE_LIMIT_MAX` and
-`VOLUNTEER_RATE_LIMIT_WINDOW_SECONDS`. This application fallback is stored in
-the running Node.js process; Cloudflare remains the shared source of protection
-if the app runs in multiple processes or restarts.
+The APIs also enforce the values in `VOLUNTEER_RATE_LIMIT_MAX` /
+`VOLUNTEER_RATE_LIMIT_WINDOW_SECONDS` and `ORGANIZER_RATE_LIMIT_MAX` /
+`ORGANIZER_RATE_LIMIT_WINDOW_SECONDS`. Each form keeps its own in-process
+counter. This application fallback is stored in the running Node.js process;
+Cloudflare remains the shared source of protection if the app runs in multiple
+processes or restarts.
