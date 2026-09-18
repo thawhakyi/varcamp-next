@@ -37,8 +37,6 @@ export const registrationHeaders = [
   "Skills",
   "Computer Access",
   "Stable Internet",
-  "Working Microphone",
-  "Working Camera",
   "Operating System",
   "Browser",
   "WorkAdventure Experience",
@@ -124,11 +122,11 @@ const registrationRangeSettings: Record<
 > = {
   volunteer: {
     environmentVariable: "GOOGLE_SHEETS_RANGE",
-    defaultRange: "Volunteer Registrations!A:AA",
+    defaultRange: "Volunteer Registrations!A:Y",
   },
   organizer: {
     environmentVariable: "GOOGLE_SHEETS_ORGANIZER_RANGE",
-    defaultRange: "Organizer Registrations!A:AA",
+    defaultRange: "Organizer Registrations!A:Y",
   },
 }
 
@@ -163,7 +161,7 @@ function getRegistrationRange(configuredRange: string) {
   const sheetPrefix =
     separatorIndex >= 0 ? configuredRange.slice(0, separatorIndex + 1) : ""
 
-  return `${sheetPrefix}A:AA`
+  return `${sheetPrefix}A:Y`
 }
 
 function getHeaderRange(range: string) {
@@ -272,10 +270,6 @@ function createRegistrationRow(
       .join(", "),
     technicalReadiness.computerAccess,
     technicalReadiness.stableInternet,
-    // Keep the removed microphone and camera columns blank so historical rows
-    // remain aligned with the existing 26-column spreadsheet.
-    "",
-    "",
     lookups.operatingSystemNames.get(technicalReadiness.operatingSystem) ||
       technicalReadiness.operatingSystem,
     lookups.browserNames.get(technicalReadiness.browser) ||

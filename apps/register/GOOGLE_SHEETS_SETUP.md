@@ -28,10 +28,10 @@ sheet tab only:
 | Organizer | `GOOGLE_SHEETS_ORGANIZER_RANGE`| `Organizer Registrations`  |
 
 Both ranges are optional; the defaults above are used when they are unset. If
-you use different sheet tabs, update those variables and keep each range at 27
-columns (`A:AA`).
+you use different sheet tabs, update those variables and keep each range at 25
+columns (`A:Y`).
 
-The first successful submission creates the 27-column header row if the tab is
+The first successful submission creates the 25-column header row if the tab is
 empty. Later submissions are appended as new rows.
 
 The six Commitment and Agreement values are validated before submission but
