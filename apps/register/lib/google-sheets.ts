@@ -16,7 +16,12 @@ import {
   volunteerSkillOptions,
   volunteerTeams,
 } from "@/app/2026/volunteer/_components/volunteer-data"
+import {
+  preferredTimeOptions,
+  socialLinkFields,
+} from "@/app/2026/speaker/_components/speaker-data"
 import type { OrganizerRegistrationSubmission } from "@/lib/organizer-registration-schema"
+import type { SpeakerRegistrationSubmission } from "@/lib/speaker-registration-schema"
 import type { VolunteerRegistrationSubmission } from "@/lib/volunteer-registration-schema"
 
 const sheetsScope = "https://www.googleapis.com/auth/spreadsheets"
@@ -50,6 +55,31 @@ export const registrationHeaders = [
 ] as const
 
 export const volunteerRegistrationHeaders = registrationHeaders
+
+export const speakerRegistrationHeaders = [
+  "Submitted At (UTC)",
+  "Name",
+  "Email",
+  "Phone",
+  "Telegram",
+  "Job Title",
+  "Company/Organization",
+  "Biography",
+  "Profile Photo",
+  "LinkedIn",
+  "Facebook",
+  "YouTube",
+  "GitHub",
+  "Session Title",
+  "Session Description",
+  "Preferred Time",
+  "Needs Technical Support",
+  "Technical Support",
+  "Recording Consent",
+  "Has Special Request",
+  "Special Request",
+  "Submitter IP",
+] as const
 
 type RegistrationKind = "volunteer" | "organizer"
 
@@ -114,12 +144,11 @@ const registrationLookups: Record<RegistrationKind, RegistrationLookups> = {
   }),
 }
 
+type RangeSettings = { environmentVariable: string; defaultRange: string }
+
 // Both registration forms live in the same spreadsheet and are separated by
 // sheet tab. Only the tab name differs between the two ranges.
-const registrationRangeSettings: Record<
-  RegistrationKind,
-  { environmentVariable: string; defaultRange: string }
-> = {
+const registrationRangeSettings: Record<RegistrationKind, RangeSettings> = {
   volunteer: {
     environmentVariable: "GOOGLE_SHEETS_RANGE",
     defaultRange: "Volunteer Registrations!A:Y",
@@ -130,6 +159,12 @@ const registrationRangeSettings: Record<
   },
 }
 
+// Speaker registrations use their own tab and columns in the same spreadsheet.
+const speakerRangeSettings: RangeSettings = {
+  environmentVariable: "GOOGLE_SHEETS_SPEAKER_RANGE",
+  defaultRange: "Speaker Registrations!A:V",
+}
+
 type GoogleSheetsConfig = {
   clientEmail: string
   privateKey: string
@@ -137,17 +172,19 @@ type GoogleSheetsConfig = {
   range: string
 }
 
-function getGoogleSheetsConfig(kind: RegistrationKind): GoogleSheetsConfig {
+function getGoogleSheetsConfig({
+  environmentVariable,
+  defaultRange,
+}: RangeSettings): GoogleSheetsConfig {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
   const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
     /\\n/g,
     "\n"
   )
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
-  const { environmentVariable, defaultRange } = registrationRangeSettings[kind]
   const configuredRange =
     process.env[environmentVariable]?.trim() || defaultRange
-  const range = getRegistrationRange(configuredRange)
+  const range = getRegistrationRange(configuredRange, defaultRange)
 
   if (!clientEmail || !privateKey || !spreadsheetId) {
     throw new Error("Google Sheets environment variables are not configured.")
@@ -156,12 +193,13 @@ function getGoogleSheetsConfig(kind: RegistrationKind): GoogleSheetsConfig {
   return { clientEmail, privateKey, spreadsheetId, range }
 }
 
-function getRegistrationRange(configuredRange: string) {
+// Only the tab name is configurable; the columns always follow the default.
+function getRegistrationRange(configuredRange: string, defaultRange: string) {
   const separatorIndex = configuredRange.indexOf("!")
   const sheetPrefix =
     separatorIndex >= 0 ? configuredRange.slice(0, separatorIndex + 1) : ""
 
-  return `${sheetPrefix}A:Y`
+  return `${sheetPrefix}${defaultRange.slice(defaultRange.indexOf("!") + 1)}`
 }
 
 function getHeaderRange(range: string) {
@@ -185,7 +223,8 @@ function getSheetsValueUrl(spreadsheetId: string, range: string) {
 async function ensureHeaderRow(
   auth: JWT,
   spreadsheetId: string,
-  range: string
+  range: string,
+  headers: readonly string[]
 ) {
   const headerRange = getHeaderRange(range)
   const headerUrl = getSheetsValueUrl(spreadsheetId, headerRange)
@@ -197,10 +236,8 @@ async function ensureHeaderRow(
 
   const currentHeaders = existingHeader.data.values?.[0] ?? []
   const headersAreCurrent =
-    currentHeaders.length === registrationHeaders.length &&
-    registrationHeaders.every(
-      (header, index) => currentHeaders[index] === header
-    )
+    currentHeaders.length === headers.length &&
+    headers.every((header, index) => currentHeaders[index] === header)
 
   if (headersAreCurrent) {
     return
@@ -212,7 +249,7 @@ async function ensureHeaderRow(
     params: { valueInputOption: "RAW" },
     data: {
       majorDimension: "ROWS",
-      values: [[...registrationHeaders]],
+      values: [[...headers]],
     },
   })
 }
@@ -287,20 +324,61 @@ function createRegistrationRow(
   ]
 }
 
-async function appendRegistration(
-  kind: RegistrationKind,
-  submission: RegistrationSubmission,
+const speakerPreferredTimeNames: ReadonlyMap<string, string> = new Map(
+  preferredTimeOptions.map((option) => [option.value, option.label])
+)
+
+function getSpeakerLink(prefix: string, handle: string) {
+  return handle ? `https://${prefix}${handle}` : ""
+}
+
+function createSpeakerRegistrationRow(
+  submission: SpeakerRegistrationSubmission,
+  profilePhotoUrl: string,
   clientIp: string
 ) {
+  const { generalInformation, profile, session } = submission
+
+  return [
+    new Date().toISOString(),
+    generalInformation.name,
+    generalInformation.email,
+    generalInformation.phone,
+    getSpeakerLink("t.me/", generalInformation.telegram),
+    profile.jobTitle,
+    profile.company,
+    profile.biography,
+    profilePhotoUrl,
+    ...socialLinkFields.map((field) =>
+      getSpeakerLink(field.prefix, profile[field.key])
+    ),
+    session.title,
+    session.description,
+    speakerPreferredTimeNames.get(session.preferredTime) ||
+      session.preferredTime,
+    session.needsTechnicalSupport,
+    session.technicalSupport,
+    session.recordingConsent,
+    session.hasSpecialRequest,
+    session.specialRequest,
+    clientIp,
+  ]
+}
+
+async function appendRow(
+  rangeSettings: RangeSettings,
+  headers: readonly string[],
+  row: string[]
+) {
   const { clientEmail, privateKey, spreadsheetId, range } =
-    getGoogleSheetsConfig(kind)
+    getGoogleSheetsConfig(rangeSettings)
   const auth = new JWT({
     email: clientEmail,
     key: privateKey,
     scopes: [sheetsScope],
   })
 
-  await ensureHeaderRow(auth, spreadsheetId, range)
+  await ensureHeaderRow(auth, spreadsheetId, range, headers)
 
   await auth.request({
     url: `${getSheetsValueUrl(spreadsheetId, range)}:append`,
@@ -311,9 +389,33 @@ async function appendRegistration(
     },
     data: {
       majorDimension: "ROWS",
-      values: [createRegistrationRow(kind, submission, clientIp)],
+      values: [row],
     },
   })
+}
+
+async function appendRegistration(
+  kind: RegistrationKind,
+  submission: RegistrationSubmission,
+  clientIp: string
+) {
+  await appendRow(
+    registrationRangeSettings[kind],
+    registrationHeaders,
+    createRegistrationRow(kind, submission, clientIp)
+  )
+}
+
+export async function appendSpeakerRegistration(
+  submission: SpeakerRegistrationSubmission,
+  profilePhotoUrl: string,
+  clientIp: string
+) {
+  await appendRow(
+    speakerRangeSettings,
+    speakerRegistrationHeaders,
+    createSpeakerRegistrationRow(submission, profilePhotoUrl, clientIp)
+  )
 }
 
 export async function appendVolunteerRegistration(

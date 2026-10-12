@@ -26,7 +26,7 @@ export default function OrganizerRegistrationSuccessPage() {
             className="h-7 w-auto text-foreground"
             title="VarCamp"
           />
-          <Badge variant="secondary" className="bg-primary text-foreground">
+          <Badge variant="secondary" className="bg-primary text-neutral-900">
             Submission completed
           </Badge>
         </header>
