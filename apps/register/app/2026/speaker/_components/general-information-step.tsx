@@ -1,6 +1,8 @@
 import { IconBrandTelegram } from "@tabler/icons-react"
+import type { Country } from "react-phone-number-input"
 
 import { Input } from "@workspace/ui/components/input"
+import { CountrySelect } from "@workspace/ui/components/reui/country-select"
 import { FieldGroup } from "@workspace/ui/components/reui/field"
 import { PhoneInput } from "@workspace/ui/components/reui/phone-input"
 
@@ -113,6 +115,24 @@ export function GeneralInformationStep({
             value={information.telegram}
             error={getError("telegram")}
             onValueChange={(value) => onInformationChange("telegram", value)}
+          />
+        </RegistrationField>
+
+        <RegistrationField
+          label="Country"
+          required
+          description="Where you'll be during VarCamp, so we can schedule your session at a good time for you."
+          contentClassName="sm:max-w-xs"
+          error={getError("country")}
+          errorId="country-error"
+        >
+          <CountrySelect
+            value={(information.country || undefined) as Country | undefined}
+            onChange={(country) =>
+              onInformationChange("country", country ?? "")
+            }
+            aria-invalid={Boolean(getError("country"))}
+            aria-describedby={getError("country") ? "country-error" : undefined}
           />
         </RegistrationField>
       </FieldGroup>

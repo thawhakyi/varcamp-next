@@ -23,6 +23,7 @@ export type GeneralInformation = {
   email: string
   phone: string
   telegram: string
+  country: string
 }
 
 export const socialLinkFields = [
@@ -58,6 +59,7 @@ export type SpeakerProfile = Record<SocialLinkKey, string> & {
   jobTitle: string
   company: string
   biography: string
+  aiWorkflow: string
 }
 
 export const extractLinkHandle = (text: string, prefix: string) => {
@@ -112,4 +114,5 @@ export type SessionDetails = {
   recordingConsent: YesNoAnswer | ""
   hasSpecialRequest: YesNoAnswer | ""
   specialRequest: string
+  codeOfConduct: boolean
 }

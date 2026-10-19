@@ -29,12 +29,14 @@ const initialGeneralInformation: GeneralInformation = {
   email: "",
   phone: "",
   telegram: "",
+  country: "",
 }
 
 const initialProfile: SpeakerProfile = {
   jobTitle: "",
   company: "",
   biography: "",
+  aiWorkflow: "",
   linkedin: "",
   facebook: "",
   youtube: "",
@@ -50,6 +52,7 @@ const initialSession: SessionDetails = {
   recordingConsent: "",
   hasSpecialRequest: "",
   specialRequest: "",
+  codeOfConduct: false,
 }
 
 const profilePhotoErrorPath = "profile.photo"

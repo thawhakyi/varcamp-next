@@ -79,6 +79,10 @@ export const speakerRegistrationHeaders = [
   "Has Special Request",
   "Special Request",
   "Submitter IP",
+  // Added after launch, so they follow the original columns.
+  "Country",
+  "AI/Tech Workflow",
+  "Code of Conduct",
 ] as const
 
 type RegistrationKind = "volunteer" | "organizer"
@@ -162,7 +166,7 @@ const registrationRangeSettings: Record<RegistrationKind, RangeSettings> = {
 // Speaker registrations use their own tab and columns in the same spreadsheet.
 const speakerRangeSettings: RangeSettings = {
   environmentVariable: "GOOGLE_SHEETS_SPEAKER_RANGE",
-  defaultRange: "Speaker Registrations!A:V",
+  defaultRange: "Speaker Registrations!A:Y",
 }
 
 type GoogleSheetsConfig = {
@@ -362,6 +366,9 @@ function createSpeakerRegistrationRow(
     session.hasSpecialRequest,
     session.specialRequest,
     clientIp,
+    generalInformation.country,
+    profile.aiWorkflow,
+    session.codeOfConduct ? "Agreed" : "",
   ]
 }
 

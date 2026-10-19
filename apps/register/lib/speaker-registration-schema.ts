@@ -62,6 +62,10 @@ export const generalInformationSchema = z
       /^[a-zA-Z0-9_]*$/,
       "Use only letters, numbers, and underscores."
     ),
+    country: z
+      .string()
+      .length(2, "Select your country.")
+      .regex(/^[A-Z]{2}$/, "Select a valid country."),
   })
   .strict()
 
@@ -70,6 +74,7 @@ export const speakerProfileSchema = z
     jobTitle: optionalText("Job title", 120),
     company: optionalText("Company/Organization", 120),
     biography: optionalText("Biography", 1500),
+    aiWorkflow: optionalText("AI/Tech workflow", 1500),
     linkedin: socialHandle("LinkedIn"),
     facebook: socialHandle("Facebook"),
     youtube: socialHandle("YouTube"),
@@ -93,6 +98,9 @@ export const sessionSchema = z
     recordingConsent: yesNoAnswer,
     hasSpecialRequest: yesNoAnswer,
     specialRequest: optionalText("Special request", 1500),
+    codeOfConduct: z.literal(true, {
+      message: "Agree to the Code of Conduct to continue.",
+    }),
   })
   .strict()
   .refine(

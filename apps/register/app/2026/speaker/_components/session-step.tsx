@@ -1,3 +1,4 @@
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import {
   Field,
@@ -13,6 +14,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { BorderDecorations } from "@/app/_components/border-decorations"
 import type { RegistrationFieldErrors } from "@/lib/speaker-registration-schema"
 
+import { CodeOfConductLink } from "./code-of-conduct"
 import { RegistrationField } from "./registration-field"
 import {
   preferredTimeOptions,
@@ -256,6 +258,34 @@ export function SessionStep({
             />
           </RegistrationField>
         )}
+
+        <RegistrationField
+          label="Consent & Code of Conduct"
+          required
+          labelId="codeOfConduct-label"
+          error={getError("codeOfConduct")}
+          errorId="codeOfConduct-error"
+        >
+          <Field orientation="horizontal">
+            <Checkbox
+              id="codeOfConduct"
+              name="codeOfConduct"
+              value="accepted"
+              checked={session.codeOfConduct}
+              onCheckedChange={(checked) =>
+                onSessionChange("codeOfConduct", checked === true)
+              }
+              required
+              aria-invalid={Boolean(getError("codeOfConduct"))}
+              aria-describedby={
+                getError("codeOfConduct") ? "codeOfConduct-error" : undefined
+              }
+            />
+            <FieldLabel htmlFor="codeOfConduct" className="block font-normal">
+              I have read and agree to follow the <CodeOfConductLink />.
+            </FieldLabel>
+          </Field>
+        </RegistrationField>
       </FieldGroup>
     </div>
   )

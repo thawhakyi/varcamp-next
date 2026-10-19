@@ -136,6 +136,30 @@ export function SpeakerProfileStep({
         </RegistrationField>
 
         <RegistrationField
+          htmlFor="aiWorkflow"
+          label="How are you using AI/Tech in your daily workflow?"
+          description="Tools, habits, or projects — a few sentences is enough."
+          error={getError("aiWorkflow")}
+          errorId="aiWorkflow-error"
+        >
+          <Textarea
+            id="aiWorkflow"
+            name="aiWorkflow"
+            className="resize-y"
+            rows={4}
+            value={profile.aiWorkflow}
+            maxLength={1500}
+            onChange={(event) =>
+              onProfileChange("aiWorkflow", event.target.value)
+            }
+            aria-invalid={Boolean(getError("aiWorkflow"))}
+            aria-describedby={
+              getError("aiWorkflow") ? "aiWorkflow-error" : undefined
+            }
+          />
+        </RegistrationField>
+
+        <RegistrationField
           label="Profile Photo"
           description="A square photo of your face works best."
           labelId="profilePhoto-label"
