@@ -111,6 +111,45 @@ export function consumeVolunteerRateLimit(identifier: string): RateLimitResult {
   }
 }
 
+// Reports the current allowance without using any of it.
+export function checkVolunteerRateLimit(identifier: string): RateLimitResult {
+  const now = Date.now()
+  const currentEntry = rateLimitStore.get(identifier)
+
+  if (!currentEntry || currentEntry.resetAt <= now) {
+    return {
+      limit: volunteerRateLimit,
+      remaining: volunteerRateLimit,
+      resetAt: now + volunteerRateLimitWindowSeconds * 1000,
+      retryAfter: 0,
+      success: true,
+    }
+  }
+
+  const remaining = Math.max(0, volunteerRateLimit - currentEntry.count)
+
+  return {
+    limit: volunteerRateLimit,
+    remaining,
+    resetAt: currentEntry.resetAt,
+    retryAfter:
+      remaining > 0
+        ? 0
+        : Math.max(1, Math.ceil((currentEntry.resetAt - now) / 1000)),
+    success: remaining > 0,
+  }
+}
+
+// Gives back the allowance taken by consumeVolunteerRateLimit when the submission
+// could not be saved.
+export function releaseVolunteerRateLimit(identifier: string) {
+  const currentEntry = rateLimitStore.get(identifier)
+
+  if (currentEntry && currentEntry.count > 0) {
+    currentEntry.count -= 1
+  }
+}
+
 function pruneRateLimitStore(now: number) {
   if (rateLimitStore.size <= maximumTrackedAddresses) {
     return

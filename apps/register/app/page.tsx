@@ -1,26 +1,145 @@
+import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRightIcon } from "lucide-react"
+import { ArrowUpRightIcon, ChevronRightIcon } from "lucide-react"
+
+import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@workspace/ui/components/item"
+import { Separator } from "@workspace/ui/components/separator"
+import { VarCampLogoHorizontal } from "@workspace/ui/components/varcamp-logo"
+import { cn } from "@workspace/ui/lib/utils"
+
+import { BorderDecorations } from "@/app/_components/border-decorations"
+import { mainWebsiteUrl } from "@/app/_components/registration-status"
+
+export const metadata: Metadata = {
+  title: "Registration | VarCamp 2026",
+  description:
+    "Register as a speaker, community, volunteer, or organizer for VarCamp 2026.",
+}
+
+type RegistrationStatus = "open" | "soon" | "closed"
+
+const registrations = [
+  {
+    title: "Speaker",
+    description: "Share a session with the VarCamp community.",
+    href: "/2026/speaker",
+    status: "open",
+  },
+  {
+    title: "Community",
+    description: "Take part as a community or organization.",
+    href: "/2026/community",
+    status: "open",
+  },
+  {
+    title: "Volunteer",
+    description: "Help run VarCamp on the day.",
+    href: "/2026/volunteer",
+    status: "soon",
+  },
+  {
+    title: "Organizer",
+    description: "Join the team that plans VarCamp.",
+    href: "/2026/organizer",
+    status: "closed",
+  },
+] as const satisfies readonly {
+  title: string
+  description: string
+  href: string
+  status: RegistrationStatus
+}[]
+
+const statusLabels: Record<RegistrationStatus, string> = {
+  open: "Open",
+  soon: "Coming soon",
+  closed: "Closed",
+}
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-muted/50 via-background to-background p-4 sm:p-8">
-      <div className="max-w-3xl space-y-6 text-center">
-        <h1 className="animate-in text-5xl font-bold tracking-tight text-foreground duration-700 ease-out fade-in slide-in-from-bottom-4 sm:text-6xl">
-          Welcome to VarCamp
-        </h1>
-        <p className="animate-in text-xl text-muted-foreground delay-150 duration-700 ease-out fill-mode-both slide-in-from-bottom-5 fade-in">
-          Join our community of volunteers and make a difference.
-        </p>
-        <div className="animate-in pt-8 delay-300 duration-700 ease-out fill-mode-both fade-in slide-in-from-bottom-6">
-          <Link
-            href="/2026/volunteer"
-            className="group inline-flex h-12 items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-all hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Become a Volunteer
-            <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-1" />
-          </Link>
+    <main className="flex min-h-dvh items-center justify-center overflow-hidden bg-muted/10 px-6 py-16 sm:px-10">
+      <section
+        aria-labelledby="home-heading"
+        className="relative w-full max-w-4xl bg-card px-6 py-7 ring-1 ring-border/60 sm:px-10 sm:py-9 lg:px-12 lg:py-10"
+      >
+        <BorderDecorations />
+
+        <header className="flex items-center justify-between gap-4">
+          <VarCampLogoHorizontal
+            className="h-7 w-auto text-foreground"
+            title="VarCamp"
+          />
+          <Button asChild variant="ghost" size="sm">
+            <a href={mainWebsiteUrl}>
+              var.camp
+              <ArrowUpRightIcon data-icon="inline-end" />
+            </a>
+          </Button>
+        </header>
+
+        <Separator className="my-7 sm:my-9" />
+
+        <div className="grid gap-8 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-10">
+          <div className="flex max-w-md flex-col gap-4">
+            <h1
+              id="home-heading"
+              className="text-2xl/7 font-bold tracking-tight sm:text-3xl"
+            >
+              VarCamp 2026 registration
+            </h1>
+            <p className="text-base leading-7 text-pretty text-muted-foreground sm:text-lg">
+              Choose how you&apos;d like to take part.
+            </p>
+          </div>
+
+          <nav aria-label="Registrations">
+            <ItemGroup className="gap-2">
+              {registrations.map((registration) => (
+                <Item key={registration.href} asChild variant="outline">
+                  <Link href={registration.href}>
+                    <ItemContent>
+                      <ItemTitle>{registration.title}</ItemTitle>
+                      <ItemDescription>
+                        {registration.description}
+                      </ItemDescription>
+                    </ItemContent>
+                    <ItemActions>
+                      <Badge
+                        variant={
+                          registration.status === "open"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className={cn(
+                          registration.status === "open"
+                            ? "bg-primary text-neutral-900"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {statusLabels[registration.status]}
+                      </Badge>
+                      <ChevronRightIcon
+                        aria-hidden="true"
+                        className="size-4 text-muted-foreground"
+                      />
+                    </ItemActions>
+                  </Link>
+                </Item>
+              ))}
+            </ItemGroup>
+          </nav>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }

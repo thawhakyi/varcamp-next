@@ -2,8 +2,10 @@ import { profilePhotoMaxBytes } from "@/app/2026/speaker/_components/speaker-dat
 import { uploadSpeakerProfilePhoto } from "@/lib/cloudflare-r2"
 import { appendSpeakerRegistration } from "@/lib/google-sheets"
 import {
+  checkSpeakerRateLimit,
   consumeSpeakerRateLimit,
   getSpeakerClientIp,
+  releaseSpeakerRateLimit,
 } from "@/lib/speaker-rate-limit"
 import {
   speakerRegistrationSchema,
@@ -97,6 +99,25 @@ function createRateLimitHeaders(
   }
 }
 
+function createRateLimitResponse(
+  result: ReturnType<typeof consumeSpeakerRateLimit>
+) {
+  const retryMinutes = Math.max(1, Math.ceil(result.retryAfter / 60))
+
+  return Response.json(
+    {
+      message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
+    },
+    {
+      status: 429,
+      headers: {
+        ...createRateLimitHeaders(result),
+        "Retry-After": String(result.retryAfter),
+      },
+    }
+  )
+}
+
 // The browser-reported file type is not trusted; the file content decides.
 async function detectPhotoSignature(photo: File) {
   const header = new Uint8Array(await photo.slice(0, 12).arrayBuffer())
@@ -136,24 +157,13 @@ export async function POST(request: Request) {
     )
   }
 
-  const rateLimit = consumeSpeakerRateLimit(clientIp)
+  // Only saved submissions count toward the limit, so fixing invalid answers
+  // never locks anyone out.
+  const rateLimit = checkSpeakerRateLimit(clientIp)
   const rateLimitHeaders = createRateLimitHeaders(rateLimit)
 
   if (!rateLimit.success) {
-    const retryMinutes = Math.max(1, Math.ceil(rateLimit.retryAfter / 60))
-
-    return Response.json(
-      {
-        message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
-      },
-      {
-        status: 429,
-        headers: {
-          ...rateLimitHeaders,
-          "Retry-After": String(rateLimit.retryAfter),
-        },
-      }
-    )
+    return createRateLimitResponse(rateLimit)
   }
 
   let requestBody: unknown
@@ -205,6 +215,14 @@ export async function POST(request: Request) {
     )
   }
 
+  // Taken just before saving so simultaneous submissions can't all pass the
+  // check above.
+  const reservation = consumeSpeakerRateLimit(clientIp)
+
+  if (!reservation.success) {
+    return createRateLimitResponse(reservation)
+  }
+
   try {
     const profilePhotoUrl =
       photo && photoSignature
@@ -219,9 +237,10 @@ export async function POST(request: Request) {
 
     return Response.json(
       { message: "Registration submitted successfully." },
-      { status: 201, headers: rateLimitHeaders }
+      { status: 201, headers: createRateLimitHeaders(reservation) }
     )
   } catch (error) {
+    releaseSpeakerRateLimit(clientIp)
     console.error("Unable to save speaker registration:", error)
 
     return Response.json(

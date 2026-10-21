@@ -1,7 +1,9 @@
 import { appendOrganizerRegistration } from "@/lib/google-sheets"
 import {
+  checkOrganizerRateLimit,
   consumeOrganizerRateLimit,
   getOrganizerClientIp,
+  releaseOrganizerRateLimit,
 } from "@/lib/organizer-rate-limit"
 import { organizerRegistrationSchema } from "@/lib/organizer-registration-schema"
 
@@ -62,6 +64,25 @@ function createRateLimitHeaders(
   }
 }
 
+function createRateLimitResponse(
+  result: ReturnType<typeof consumeOrganizerRateLimit>
+) {
+  const retryMinutes = Math.max(1, Math.ceil(result.retryAfter / 60))
+
+  return Response.json(
+    {
+      message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
+    },
+    {
+      status: 429,
+      headers: {
+        ...createRateLimitHeaders(result),
+        "Retry-After": String(result.retryAfter),
+      },
+    }
+  )
+}
+
 export async function POST(request: Request) {
   if (!isSameOriginSubmission(request)) {
     return Response.json(
@@ -88,24 +109,13 @@ export async function POST(request: Request) {
     )
   }
 
-  const rateLimit = consumeOrganizerRateLimit(clientIp)
+  // Only saved submissions count toward the limit, so fixing invalid answers
+  // never locks anyone out.
+  const rateLimit = checkOrganizerRateLimit(clientIp)
   const rateLimitHeaders = createRateLimitHeaders(rateLimit)
 
   if (!rateLimit.success) {
-    const retryMinutes = Math.max(1, Math.ceil(rateLimit.retryAfter / 60))
-
-    return Response.json(
-      {
-        message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
-      },
-      {
-        status: 429,
-        headers: {
-          ...rateLimitHeaders,
-          "Retry-After": String(rateLimit.retryAfter),
-        },
-      }
-    )
+    return createRateLimitResponse(rateLimit)
   }
 
   let requestBody: unknown
@@ -134,14 +144,23 @@ export async function POST(request: Request) {
     )
   }
 
+  // Taken just before saving so simultaneous submissions can't all pass the
+  // check above.
+  const reservation = consumeOrganizerRateLimit(clientIp)
+
+  if (!reservation.success) {
+    return createRateLimitResponse(reservation)
+  }
+
   try {
     await appendOrganizerRegistration(result.data, clientIp)
 
     return Response.json(
       { message: "Registration submitted successfully." },
-      { status: 201, headers: rateLimitHeaders }
+      { status: 201, headers: createRateLimitHeaders(reservation) }
     )
   } catch (error) {
+    releaseOrganizerRateLimit(clientIp)
     console.error("Unable to append organizer registration:", error)
 
     return Response.json(

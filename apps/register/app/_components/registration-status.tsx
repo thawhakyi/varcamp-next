@@ -1,10 +1,14 @@
 import type { ReactNode } from "react"
+import { ArrowUpRightIcon } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { VarCampLogoHorizontal } from "@workspace/ui/components/varcamp-logo"
 
 import { BorderDecorations } from "./border-decorations"
+
+export const mainWebsiteUrl = "https://www.var.camp"
 
 type RegistrationStatusProps = {
   badge: string
@@ -79,6 +83,13 @@ export function RegistrationStatus({
             <div className="text-sm font-medium text-foreground sm:text-base">
               {footer}
             </div>
+
+            <Button asChild variant="outline" size="lg" className="w-fit">
+              <a href={mainWebsiteUrl}>
+                Visit var.camp
+                <ArrowUpRightIcon data-icon="inline-end" />
+              </a>
+            </Button>
           </aside>
         </div>
       </section>

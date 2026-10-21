@@ -2,6 +2,7 @@ import "server-only"
 
 import { JWT } from "google-auth-library"
 
+import { socialLinkFields as communitySocialLinkFields } from "@/app/2026/community/_components/community-data"
 import {
   browserOptions as organizerBrowserOptions,
   contactChannels as organizerContactChannels,
@@ -20,6 +21,7 @@ import {
   preferredTimeOptions,
   socialLinkFields,
 } from "@/app/2026/speaker/_components/speaker-data"
+import type { CommunityRegistrationSubmission } from "@/lib/community-registration-schema"
 import type { OrganizerRegistrationSubmission } from "@/lib/organizer-registration-schema"
 import type { SpeakerRegistrationSubmission } from "@/lib/speaker-registration-schema"
 import type { VolunteerRegistrationSubmission } from "@/lib/volunteer-registration-schema"
@@ -85,11 +87,28 @@ export const speakerRegistrationHeaders = [
   "Code of Conduct",
 ] as const
 
+export const communityRegistrationHeaders = [
+  "Submitted At (UTC)",
+  "Community/Organization Name",
+  "About",
+  "Logo",
+  "Website",
+  "Facebook",
+  "LinkedIn",
+  "X",
+  "YouTube",
+  "Contact Person Name",
+  "Email",
+  "Telegram",
+  "Purpose of Participation",
+  "Non-profit",
+  "Submitter IP",
+] as const
+
 type RegistrationKind = "volunteer" | "organizer"
 
 type RegistrationSubmission =
-  | VolunteerRegistrationSubmission
-  | OrganizerRegistrationSubmission
+  VolunteerRegistrationSubmission | OrganizerRegistrationSubmission
 
 type RegistrationLookups = {
   browserNames: ReadonlyMap<string, string>
@@ -167,6 +186,11 @@ const registrationRangeSettings: Record<RegistrationKind, RangeSettings> = {
 const speakerRangeSettings: RangeSettings = {
   environmentVariable: "GOOGLE_SHEETS_SPEAKER_RANGE",
   defaultRange: "Speaker Registrations!A:Y",
+}
+
+const communityRangeSettings: RangeSettings = {
+  environmentVariable: "GOOGLE_SHEETS_COMMUNITY_RANGE",
+  defaultRange: "Community Registrations!A:O",
 }
 
 type GoogleSheetsConfig = {
@@ -332,7 +356,7 @@ const speakerPreferredTimeNames: ReadonlyMap<string, string> = new Map(
   preferredTimeOptions.map((option) => [option.value, option.label])
 )
 
-function getSpeakerLink(prefix: string, handle: string) {
+function getProfileLink(prefix: string, handle: string) {
   return handle ? `https://${prefix}${handle}` : ""
 }
 
@@ -348,13 +372,13 @@ function createSpeakerRegistrationRow(
     generalInformation.name,
     generalInformation.email,
     generalInformation.phone,
-    getSpeakerLink("t.me/", generalInformation.telegram),
+    getProfileLink("t.me/", generalInformation.telegram),
     profile.jobTitle,
     profile.company,
     profile.biography,
     profilePhotoUrl,
     ...socialLinkFields.map((field) =>
-      getSpeakerLink(field.prefix, profile[field.key])
+      getProfileLink(field.prefix, profile[field.key])
     ),
     session.title,
     session.description,
@@ -369,6 +393,31 @@ function createSpeakerRegistrationRow(
     generalInformation.country,
     profile.aiWorkflow,
     session.codeOfConduct ? "Agreed" : "",
+  ]
+}
+
+function createCommunityRegistrationRow(
+  submission: CommunityRegistrationSubmission,
+  logoUrl: string,
+  clientIp: string
+) {
+  const { profile, contact, participation } = submission
+
+  return [
+    new Date().toISOString(),
+    profile.name,
+    profile.about,
+    logoUrl,
+    profile.website,
+    ...communitySocialLinkFields.map((field) =>
+      getProfileLink(field.prefix, profile[field.key])
+    ),
+    contact.name,
+    contact.email,
+    getProfileLink("t.me/", contact.telegram),
+    participation.purpose,
+    participation.isNonProfit,
+    clientIp,
   ]
 }
 
@@ -422,6 +471,18 @@ export async function appendSpeakerRegistration(
     speakerRangeSettings,
     speakerRegistrationHeaders,
     createSpeakerRegistrationRow(submission, profilePhotoUrl, clientIp)
+  )
+}
+
+export async function appendCommunityRegistration(
+  submission: CommunityRegistrationSubmission,
+  logoUrl: string,
+  clientIp: string
+) {
+  await appendRow(
+    communityRangeSettings,
+    communityRegistrationHeaders,
+    createCommunityRegistrationRow(submission, logoUrl, clientIp)
   )
 }
 

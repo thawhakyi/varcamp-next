@@ -1,7 +1,9 @@
 import { appendVolunteerRegistration } from "@/lib/google-sheets"
 import {
+  checkVolunteerRateLimit,
   consumeVolunteerRateLimit,
   getVolunteerClientIp,
+  releaseVolunteerRateLimit,
 } from "@/lib/volunteer-rate-limit"
 import { volunteerRegistrationSchema } from "@/lib/volunteer-registration-schema"
 
@@ -62,6 +64,25 @@ function createRateLimitHeaders(
   }
 }
 
+function createRateLimitResponse(
+  result: ReturnType<typeof consumeVolunteerRateLimit>
+) {
+  const retryMinutes = Math.max(1, Math.ceil(result.retryAfter / 60))
+
+  return Response.json(
+    {
+      message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
+    },
+    {
+      status: 429,
+      headers: {
+        ...createRateLimitHeaders(result),
+        "Retry-After": String(result.retryAfter),
+      },
+    }
+  )
+}
+
 export async function POST(request: Request) {
   if (!isSameOriginSubmission(request)) {
     return Response.json(
@@ -88,24 +109,13 @@ export async function POST(request: Request) {
     )
   }
 
-  const rateLimit = consumeVolunteerRateLimit(clientIp)
+  // Only saved submissions count toward the limit, so fixing invalid answers
+  // never locks anyone out.
+  const rateLimit = checkVolunteerRateLimit(clientIp)
   const rateLimitHeaders = createRateLimitHeaders(rateLimit)
 
   if (!rateLimit.success) {
-    const retryMinutes = Math.max(1, Math.ceil(rateLimit.retryAfter / 60))
-
-    return Response.json(
-      {
-        message: `Too many registration attempts. Please try again in ${retryMinutes} minute${retryMinutes === 1 ? "" : "s"}.`,
-      },
-      {
-        status: 429,
-        headers: {
-          ...rateLimitHeaders,
-          "Retry-After": String(rateLimit.retryAfter),
-        },
-      }
-    )
+    return createRateLimitResponse(rateLimit)
   }
 
   let requestBody: unknown
@@ -134,14 +144,23 @@ export async function POST(request: Request) {
     )
   }
 
+  // Taken just before saving so simultaneous submissions can't all pass the
+  // check above.
+  const reservation = consumeVolunteerRateLimit(clientIp)
+
+  if (!reservation.success) {
+    return createRateLimitResponse(reservation)
+  }
+
   try {
     await appendVolunteerRegistration(result.data, clientIp)
 
     return Response.json(
       { message: "Registration submitted successfully." },
-      { status: 201, headers: rateLimitHeaders }
+      { status: 201, headers: createRateLimitHeaders(reservation) }
     )
   } catch (error) {
+    releaseVolunteerRateLimit(clientIp)
     console.error("Unable to append volunteer registration:", error)
 
     return Response.json(

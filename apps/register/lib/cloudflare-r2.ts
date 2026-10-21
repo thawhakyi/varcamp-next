@@ -16,25 +16,46 @@ function getR2Config() {
   return { accountId, accessKeyId, secretAccessKey, bucket, publicBaseUrl }
 }
 
-type SpeakerProfilePhotoUpload = {
+type ImageUpload = {
   contentType: string
   extension: string
+  image: Blob
+}
+
+type SpeakerProfilePhotoUpload = Omit<ImageUpload, "image"> & {
   photo: Blob
 }
 
-// Returns the public link to the uploaded photo, or its object key when the
-// bucket has no public URL configured.
+type CommunityLogoUpload = Omit<ImageUpload, "image"> & {
+  logo: Blob
+}
+
 export async function uploadSpeakerProfilePhoto({
-  contentType,
-  extension,
   photo,
+  ...upload
 }: SpeakerProfilePhotoUpload) {
+  return uploadImage("speaker-photos", { ...upload, image: photo })
+}
+
+export async function uploadCommunityLogo({
+  logo,
+  ...upload
+}: CommunityLogoUpload) {
+  return uploadImage("community-logos", { ...upload, image: logo })
+}
+
+// Returns the public link to the uploaded image, or its object key when the
+// bucket has no public URL configured.
+async function uploadImage(
+  folder: string,
+  { contentType, extension, image }: ImageUpload
+) {
   const { accountId, accessKeyId, secretAccessKey, bucket, publicBaseUrl } =
     getR2Config()
-  const body = new Uint8Array(await photo.arrayBuffer())
+  const body = new Uint8Array(await image.arrayBuffer())
   const now = new Date()
   // Only URL-safe characters, so the key needs no encoding when signing.
-  const key = `speaker-photos/${now
+  const key = `${folder}/${now
     .toISOString()
     .replace(/[:.]/g, "-")}-${crypto.randomUUID()}.${extension}`
   const host = `${accountId}.r2.cloudflarestorage.com`
