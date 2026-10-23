@@ -22,12 +22,18 @@ import { mainWebsiteUrl } from "@/app/_components/registration-status"
 export const metadata: Metadata = {
   title: "Registration | VarCamp 2026",
   description:
-    "Register as a speaker, community, volunteer, or organizer for VarCamp 2026.",
+    "Register as an attendee, speaker, community, volunteer, or organizer for VarCamp 2026.",
 }
 
 type RegistrationStatus = "open" | "soon" | "closed"
 
 const registrations = [
+  {
+    title: "Attendee",
+    description: "Join the sessions at VarCamp 2026.",
+    href: "/2026/attendee",
+    status: "soon",
+  },
   {
     title: "Speaker",
     description: "Share a session with the VarCamp community.",
