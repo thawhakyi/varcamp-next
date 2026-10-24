@@ -16,6 +16,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { VarCampLogoHorizontal } from "@workspace/ui/components/varcamp-logo"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { attendeeRegistrationOpen } from "@/app/2026/attendee/_components/attendee-data"
 import { BorderDecorations } from "@/app/_components/border-decorations"
 import { mainWebsiteUrl } from "@/app/_components/registration-status"
 
@@ -32,7 +33,7 @@ const registrations = [
     title: "Attendee",
     description: "Join the sessions at VarCamp 2026.",
     href: "/2026/attendee",
-    status: "soon",
+    status: attendeeRegistrationOpen ? "open" : "soon",
   },
   {
     title: "Speaker",

@@ -2,6 +2,7 @@ import "server-only"
 
 import { JWT } from "google-auth-library"
 
+import { topicOptions } from "@/app/2026/attendee/_components/attendee-data"
 import { socialLinkFields as communitySocialLinkFields } from "@/app/2026/community/_components/community-data"
 import {
   browserOptions as organizerBrowserOptions,
@@ -21,6 +22,7 @@ import {
   preferredTimeOptions,
   socialLinkFields,
 } from "@/app/2026/speaker/_components/speaker-data"
+import type { AttendeeRecord } from "@/lib/attendee-db"
 import type { CommunityRegistrationSubmission } from "@/lib/community-registration-schema"
 import type { OrganizerRegistrationSubmission } from "@/lib/organizer-registration-schema"
 import type { SpeakerRegistrationSubmission } from "@/lib/speaker-registration-schema"
@@ -103,6 +105,24 @@ export const communityRegistrationHeaders = [
   "Purpose of Participation",
   "Non-profit",
   "Submitter IP",
+] as const
+
+export const attendeeRegistrationHeaders = [
+  "Submitted At (UTC)",
+  "Ticket ID",
+  "UUID",
+  "Full Name",
+  "Email",
+  "Lives in Myanmar",
+  "Country",
+  "Topics",
+  "Other Topics",
+  "Privacy Policy & Code of Conduct",
+  "Newsletter",
+  "Submitter IP",
+  // Filled in at the event by the check-in page.
+  "Checked In At (UTC)",
+  "Checked In By",
 ] as const
 
 type RegistrationKind = "volunteer" | "organizer"
@@ -191,6 +211,11 @@ const speakerRangeSettings: RangeSettings = {
 const communityRangeSettings: RangeSettings = {
   environmentVariable: "GOOGLE_SHEETS_COMMUNITY_RANGE",
   defaultRange: "Community Registrations!A:O",
+}
+
+const attendeeRangeSettings: RangeSettings = {
+  environmentVariable: "GOOGLE_SHEETS_ATTENDEE_RANGE",
+  defaultRange: "Attendee Registrations!A:N",
 }
 
 type GoogleSheetsConfig = {
@@ -421,11 +446,32 @@ function createCommunityRegistrationRow(
   ]
 }
 
-async function appendRow(
-  rangeSettings: RangeSettings,
-  headers: readonly string[],
-  row: string[]
-) {
+const attendeeTopicNames: ReadonlyMap<string, string> = new Map(
+  topicOptions.map((topic) => [topic.id, topic.label])
+)
+
+function createAttendeeSheetRow(record: AttendeeRecord) {
+  return [
+    record.submittedAt,
+    record.ticketId,
+    record.uuid,
+    record.name,
+    record.email,
+    record.livesInMyanmar,
+    record.country,
+    record.topics
+      .map((topic) => attendeeTopicNames.get(topic) || topic)
+      .join(", "),
+    record.otherTopics,
+    record.agreement ? "Agreed" : "",
+    record.newsletter ? "yes" : "no",
+    record.submitterIp,
+    record.checkedInAt,
+    record.checkedInBy,
+  ]
+}
+
+function createSheetsClient(rangeSettings: RangeSettings) {
   const { clientEmail, privateKey, spreadsheetId, range } =
     getGoogleSheetsConfig(rangeSettings)
   const auth = new JWT({
@@ -433,6 +479,20 @@ async function appendRow(
     key: privateKey,
     scopes: [sheetsScope],
   })
+
+  return { auth, spreadsheetId, range }
+}
+
+function getSheetPrefix(range: string) {
+  return range.slice(0, range.indexOf("!") + 1)
+}
+
+async function appendRow(
+  rangeSettings: RangeSettings,
+  headers: readonly string[],
+  row: string[]
+) {
+  const { auth, spreadsheetId, range } = createSheetsClient(rangeSettings)
 
   await ensureHeaderRow(auth, spreadsheetId, range, headers)
 
@@ -484,6 +544,42 @@ export async function appendCommunityRegistration(
     communityRegistrationHeaders,
     createCommunityRegistrationRow(submission, logoUrl, clientIp)
   )
+}
+
+// Rewrites the attendee tab from the database. Organizers read it as a copy;
+// edits made in the sheet are overwritten by the next copy.
+export async function replaceAttendeeSheet(records: AttendeeRecord[]) {
+  const { auth, spreadsheetId, range } = createSheetsClient(
+    attendeeRangeSettings
+  )
+  const sheetPrefix = getSheetPrefix(range)
+  // The attendee tab stays within columns A–Z.
+  const lastColumn = String.fromCharCode(
+    64 + attendeeRegistrationHeaders.length
+  )
+  const rows = [
+    [...attendeeRegistrationHeaders],
+    ...records.map(createAttendeeSheetRow),
+  ]
+
+  await auth.request({
+    url: getSheetsValueUrl(
+      spreadsheetId,
+      `${sheetPrefix}A1:${lastColumn}${rows.length}`
+    ),
+    method: "PUT",
+    params: { valueInputOption: "RAW" },
+    data: { majorDimension: "ROWS", values: rows },
+  })
+
+  // Clears anything below the copy, such as rows from an older layout.
+  await auth.request({
+    url: `${getSheetsValueUrl(
+      spreadsheetId,
+      `${sheetPrefix}A${rows.length + 1}:${lastColumn}`
+    )}:clear`,
+    method: "POST",
+  })
 }
 
 export async function appendVolunteerRegistration(

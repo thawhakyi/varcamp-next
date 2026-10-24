@@ -12,9 +12,9 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 
 import { BorderDecorations } from "@/app/_components/border-decorations"
+import { CodeOfConductLink } from "@/app/_components/code-of-conduct"
 import type { RegistrationFieldErrors } from "@/lib/speaker-registration-schema"
 
-import { CodeOfConductLink } from "./code-of-conduct"
 import { RegistrationField } from "./registration-field"
 import {
   preferredTimeOptions,

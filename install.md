@@ -23,7 +23,7 @@ https://register.var.camp/2026/volunteer
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22.13 or newer (the register app uses the built-in `node:sqlite`)
 - npm 11 or newer
 - A Google Cloud service account with access to the registration spreadsheet
 - PM2 for the production Node.js process
@@ -227,6 +227,26 @@ curl -kI \
 Production form submissions require Cloudflare's `CF-Connecting-IP` header.
 The verified address is used for rate limiting and stored in the spreadsheet's
 `Submitter IP` column.
+
+## Attendee database
+
+Attendee registrations and check-ins are stored in SQLite at
+`ATTENDEE_DATABASE_PATH` (default `apps/register/data/attendees.sqlite`). The
+file is created on the first registration and is not tracked by Git. The
+`Attendee Registrations` sheet tab is rewritten from the database within about
+15 seconds of each change, so edits made in the sheet are overwritten.
+
+Back up the database daily, and before deploying on the event day:
+
+```bash
+cd /var/www/register.var.camp/htdocs/apps/register
+mkdir -p backups
+sqlite3 data/attendees.sqlite ".backup 'backups/attendees-$(date +%F-%H%M).sqlite'"
+```
+
+Use `.backup` rather than copying the file, so writes in progress are not
+lost. Run the register app as a single PM2 process; the sheet copy is
+scheduled in memory.
 
 ## Deploying updates
 

@@ -2,12 +2,24 @@ import type { Metadata } from "next"
 
 import { RegistrationStatus } from "@/app/_components/registration-status"
 
-export const metadata: Metadata = {
-  title: "Coming Soon | VarCamp 2026",
-  description: "Attendee registration for VarCamp 2026 opens soon.",
-}
+import { attendeeRegistrationOpen } from "./_components/attendee-data"
+import { AttendeeRegistration } from "./_components/attendee-registration"
+
+export const metadata: Metadata = attendeeRegistrationOpen
+  ? {
+      title: "Attendee Registration | VarCamp 2026",
+      description: "Register to attend VarCamp 2026.",
+    }
+  : {
+      title: "Coming Soon | VarCamp 2026",
+      description: "Attendee registration for VarCamp 2026 opens soon.",
+    }
 
 export default function AttendeePage() {
+  if (attendeeRegistrationOpen) {
+    return <AttendeeRegistration />
+  }
+
   return (
     <RegistrationStatus
       badge="Coming soon"
