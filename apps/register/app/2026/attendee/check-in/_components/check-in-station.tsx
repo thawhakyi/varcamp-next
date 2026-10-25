@@ -387,6 +387,10 @@ export function CheckInStation(props: CheckInStationProps) {
   // Staff reach the sign-in form directly at /2026/attendee/check-in?staff;
   // it isn't linked from here.
   if (props.mode === "self") {
+    // Once attendance is recorded the camera is closed (unmounting the
+    // scanner stops it); the button below brings it back for another ticket.
+    const isRecorded = outcome?.tone === "success"
+
     return (
       <CheckInShell>
         <div className="flex flex-col gap-6">
@@ -403,13 +407,24 @@ export function CheckInStation(props: CheckInStationProps) {
             </p>
           </div>
 
-          {scanPanel}
+          {!isRecorded && scanPanel}
 
           <div aria-live="polite">
             {outcome && (
               <OutcomeCard outcome={outcome} showContactDetails={false} />
             )}
           </div>
+
+          {isRecorded && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOutcome(null)}
+            >
+              <ScanLineIcon data-icon="inline-start" />
+              Check in another ticket
+            </Button>
+          )}
         </div>
       </CheckInShell>
     )

@@ -27,15 +27,20 @@ export function isCheckInConfigured() {
 // CHECK_IN_OPEN_FROM overrides it, for example to test before the event.
 const defaultSelfCheckInOpensAt = "2026-11-15T08:30:00+06:30"
 
-export function isSelfCheckInOpen() {
+export function getSelfCheckInOpensAt() {
   const configuredOpensAt = Date.parse(
     process.env.CHECK_IN_OPEN_FROM?.trim() ?? ""
   )
-  const opensAt = Number.isNaN(configuredOpensAt)
-    ? Date.parse(defaultSelfCheckInOpensAt)
-    : configuredOpensAt
 
-  return Date.now() >= opensAt
+  return new Date(
+    Number.isNaN(configuredOpensAt)
+      ? Date.parse(defaultSelfCheckInOpensAt)
+      : configuredOpensAt
+  )
+}
+
+export function isSelfCheckInOpen() {
+  return Date.now() >= getSelfCheckInOpensAt().getTime()
 }
 
 // Hashing first gives both sides the same length, as timingSafeEqual needs.

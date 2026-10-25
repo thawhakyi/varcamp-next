@@ -220,6 +220,18 @@ export function AttendeeTicketView() {
               saved; please note your ticket ID below and refresh to try again.
             </p>
           )}
+          <div className="mt-4 flex justify-center">
+            <Button
+              type="button"
+              size="lg"
+              onClick={downloadTicket}
+              disabled={drawStatus !== "ready"}
+              className="w-full shadow-lg shadow-primary/20 sm:w-auto"
+            >
+              <DownloadIcon data-icon="inline-start" />
+              Download ticket
+            </Button>
+          </div>
         </div>
 
         {/* The QR code on the ticket is too small to scan from a phone
@@ -250,8 +262,13 @@ export function AttendeeTicketView() {
 
         <Separator className="my-7 sm:my-9" />
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button asChild variant="outline" size="lg">
+        <div className="flex justify-end">
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
             <Link
               href={
                 ticket
@@ -262,16 +279,6 @@ export function AttendeeTicketView() {
               Done
               <ArrowRightIcon data-icon="inline-end" />
             </Link>
-          </Button>
-          <Button
-            type="button"
-            size="lg"
-            onClick={downloadTicket}
-            disabled={drawStatus !== "ready"}
-            className="shadow-lg shadow-primary/20"
-          >
-            <DownloadIcon data-icon="inline-start" />
-            Download ticket
           </Button>
         </div>
       </section>
