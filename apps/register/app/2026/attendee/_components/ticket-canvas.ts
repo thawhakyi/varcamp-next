@@ -1,8 +1,12 @@
 import { create as createQrCode } from "qrcode"
 
 import type { AttendeeTicket } from "./attendee-data"
+// Imported rather than placed in public/ so it's served from /_next/, which
+// the production Nginx config passes to Next.js. Other image paths are
+// answered by WordOps's static-file rules and return 404.
+import ticketTemplate from "./e-ticket-template.png"
 
-export const ticketTemplateUrl = "/2026/e-ticket-template.png"
+const ticketTemplateUrl = ticketTemplate.src
 
 // Positions below are measured on the 2376 × 782 px template. Another export
 // of the same design works too; everything is scaled to its width.

@@ -296,6 +296,11 @@ Remove `try_files` from the proxied `location /` block and reload Nginx.
 Add the `location ^~ /_next/` proxy block shown above. WordOps static-file
 regex rules otherwise may try to read Next.js resources from the filesystem.
 
+The same rules answer image, font, and other static-file paths outside
+`/_next/`, so files in an app's `public/` folder return `404`. Import images
+in code instead (for example `import image from "./image.png"`), which serves
+them from `/_next/static/media/`.
+
 ### npm cannot find `package.json`
 
 Run npm from the monorepo root:
