@@ -1,6 +1,6 @@
 // Switches the page from "Coming soon" to the form, and lets the API accept
 // submissions.
-export const attendeeRegistrationOpen = false
+export const attendeeRegistrationOpen = true
 
 export const registrationSteps = [
   {

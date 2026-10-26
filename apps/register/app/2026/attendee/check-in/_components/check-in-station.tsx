@@ -379,7 +379,7 @@ export function CheckInStation(props: CheckInStationProps) {
         onClick={() => uploadInputRef.current?.click()}
       >
         <UploadIcon data-icon="inline-start" />
-        Upload ticket image
+        Upload your ticket
       </Button>
     </div>
   )
@@ -403,7 +403,7 @@ export function CheckInStation(props: CheckInStationProps) {
             </h1>
             <p className="text-sm leading-6 text-muted-foreground">
               Scan the QR code on your VarCamp 2026 e-ticket, or upload the
-              ticket image you downloaded.
+              e-ticket you saved.
             </p>
           </div>
 

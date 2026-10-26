@@ -204,6 +204,13 @@ export function AttendeeTicketView() {
               saved; please note your ticket ID below and refresh to try again.
             </p>
           )}
+          {ticket && (
+            <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
+              <TicketDetail label="Ticket ID" value={ticket.ticketId} />
+              <TicketDetail label="Attendee Name" value={ticket.name} />
+              <TicketDetail label="Email" value={ticket.email} />
+            </dl>
+          )}
           <div className="mt-4 flex justify-center">
             <Button
               type="button"
@@ -217,14 +224,6 @@ export function AttendeeTicketView() {
             </Button>
           </div>
         </div>
-
-        {ticket && (
-          <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
-            <TicketDetail label="Ticket ID" value={ticket.ticketId} />
-            <TicketDetail label="Attendee Name" value={ticket.name} />
-            <TicketDetail label="Email" value={ticket.email} />
-          </dl>
-        )}
 
         <CheckInGuide />
 
