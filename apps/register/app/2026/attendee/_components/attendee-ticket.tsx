@@ -26,14 +26,7 @@ import {
   ticketIdPattern,
   ticketStorageKey,
 } from "./attendee-data"
-import {
-  drawCheckInQrCode,
-  drawTicket,
-  ticketAspectRatio,
-} from "./ticket-canvas"
-
-// In CSS pixels; matches size-56 below.
-const checkInQrSize = 224
+import { drawTicket, ticketAspectRatio } from "./ticket-canvas"
 
 // The server can't see session storage, so it renders a placeholder first.
 const pendingSnapshot = "pending"
@@ -76,7 +69,6 @@ function parseTicket(storedTicket: string | null): AttendeeTicket | null {
 export function AttendeeTicketView() {
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const [drawStatus, setDrawStatus] = useState<"drawing" | "ready" | "error">(
     "drawing"
   )
@@ -105,14 +97,6 @@ export function AttendeeTicketView() {
     }
 
     let isCurrent = true
-
-    if (qrCanvasRef.current) {
-      try {
-        drawCheckInQrCode(qrCanvasRef.current, ticket, checkInQrSize)
-      } catch (error) {
-        console.error("Unable to draw the check-in QR code:", error)
-      }
-    }
 
     drawTicket(canvas, ticket)
       .then(() => {
@@ -233,22 +217,6 @@ export function AttendeeTicketView() {
             </Button>
           </div>
         </div>
-
-        {/* The QR code on the ticket is too small to scan from a phone
-            screen, so phones also get a large copy. */}
-        {ticket && (
-          <figure className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-white p-4 sm:hidden">
-            <canvas
-              ref={qrCanvasRef}
-              role="img"
-              aria-label="Check-in QR code"
-              className="size-56"
-            />
-            <figcaption className="text-sm font-medium text-neutral-700">
-              Show this QR code at check-in
-            </figcaption>
-          </figure>
-        )}
 
         {ticket && (
           <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">

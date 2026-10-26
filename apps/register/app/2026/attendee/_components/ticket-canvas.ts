@@ -8,33 +8,35 @@ import ticketTemplate from "./e-ticket-template.png"
 
 const ticketTemplateUrl = ticketTemplate.src
 
-// Positions below are measured on the 2376 × 782 px template. Another export
+// Positions below are measured on the 2316 × 722 px template. Another export
 // of the same design works too; everything is scaled to its width.
-const templateWidth = 2376
-export const ticketAspectRatio = "2376 / 782"
+const templateWidth = 2316
+export const ticketAspectRatio = "2316 / 722"
 
 const colors = {
-  label: "#21222e",
   name: "#000000",
   ticketId: "#ddd5ec",
   qr: "#000000",
+  qrBackground: "#ffffff",
 }
 
 const layout = {
-  // Centered in the light stub, between its heading and the QR code.
+  // Centered under the template's "Attendee Name" label, above the QR code.
   attendee: {
-    centerX: 1911,
-    labelY: 226,
-    labelSize: 24,
-    nameY: 262,
-    nameSize: 26,
-    lineHeight: 30,
-    maxWidth: 410,
+    centerX: 1908,
+    nameY: 234,
+    nameSize: 30,
+    lineHeight: 32,
+    // How far a two-line name moves up, keeping clear of both the label and
+    // the QR code.
+    twoLineShift: 10,
+    maxWidth: 420,
   },
   // In the purple tab at the bottom left.
-  ticketId: { x: 67, y: 719, size: 28 },
-  // The white square in the stub.
-  qr: { x: 1764, y: 304, size: 300, padding: 18 },
+  ticketId: { x: 56, y: 699, size: 28 },
+  // The gray placeholder inside the green corner marks; it's painted white
+  // first so the code has full contrast.
+  qr: { x: 1776, y: 316, size: 244, padding: 10 },
 }
 
 export function getQrPayload(ticket: AttendeeTicket) {
@@ -181,6 +183,8 @@ export async function drawTicket(
 
   const { qr } = layout
 
+  context.fillStyle = colors.qrBackground
+  context.fillRect(qr.x * scale, qr.y * scale, qr.size * scale, qr.size * scale)
   drawQrCode(
     context,
     getQrPayload(ticket),
@@ -197,8 +201,8 @@ export async function drawTicket(
   context.font = `700 ${attendee.nameSize}px ${fontFamily}`
 
   const nameLines = wrapText(context, ticket.name, attendee.maxWidth, 2)
-  // A two-line name moves the block up so it stays clear of the QR code.
-  const blockOffset = ((nameLines.length - 1) * attendee.lineHeight) / 2
+
+  const blockOffset = (nameLines.length - 1) * attendee.twoLineShift
 
   context.textAlign = "center"
   context.fillStyle = colors.name
@@ -209,44 +213,9 @@ export async function drawTicket(
       attendee.nameY - blockOffset + index * attendee.lineHeight
     )
   })
-  context.fillStyle = colors.label
-  context.font = `400 ${attendee.labelSize}px ${fontFamily}`
-  context.fillText(
-    "Attendee Name",
-    attendee.centerX,
-    attendee.labelY - blockOffset
-  )
 
   context.textAlign = "left"
   context.fillStyle = colors.ticketId
   context.font = `400 ${ticketId.size}px ${fontFamily}`
   context.fillText(ticket.ticketId, ticketId.x, ticketId.y)
-}
-
-// A large QR code on its own, for scanning straight from a phone screen.
-export function drawCheckInQrCode(
-  canvas: HTMLCanvasElement,
-  ticket: AttendeeTicket,
-  displaySize: number
-) {
-  const context = canvas.getContext("2d")
-
-  if (!context) {
-    throw new Error("Canvas is not supported.")
-  }
-
-  const size = Math.ceil(displaySize * window.devicePixelRatio)
-  const quietZone = Math.round(size * 0.06)
-
-  canvas.width = size
-  canvas.height = size
-  context.fillStyle = "#ffffff"
-  context.fillRect(0, 0, size, size)
-  drawQrCode(
-    context,
-    getQrPayload(ticket),
-    quietZone,
-    quietZone,
-    size - quietZone * 2
-  )
 }
