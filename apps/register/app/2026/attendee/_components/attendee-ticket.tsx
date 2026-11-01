@@ -295,8 +295,8 @@ function CheckInGuide() {
           How to check in on event day
         </h2>
         <p className="text-sm leading-6 text-muted-foreground">
-          Check-in opens on 15 Nov 2026 at 8:30 AM Myanmar time (UTC+6:30).
-          Download your ticket now so it&apos;s ready.
+          Check-in is open on 15 Nov 2026 from 8:30 AM to 5:00 PM Myanmar time
+          (UTC+6:30). Download your ticket now so it&apos;s ready.
         </p>
       </div>
       <ol className="flex flex-col gap-3">

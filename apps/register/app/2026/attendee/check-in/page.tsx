@@ -2,9 +2,10 @@ import type { Metadata } from "next"
 
 import {
   getCheckInSession,
+  getSelfCheckInClosesAt,
   getSelfCheckInOpensAt,
+  getSelfCheckInStatus,
   isCheckInConfigured,
-  isSelfCheckInOpen,
 } from "@/lib/check-in-session"
 
 import { CheckInClosed } from "./_components/check-in-closed"
@@ -35,9 +36,15 @@ export default async function CheckInPage({
     return <CheckInSignIn isConfigured={isCheckInConfigured()} />
   }
 
-  return isSelfCheckInOpen() ? (
+  const status = getSelfCheckInStatus()
+
+  if (status === "not-open") {
+    return <CheckInClosed state="not-open" opensAt={getSelfCheckInOpensAt()} />
+  }
+
+  return status === "open" ? (
     <CheckInStation mode="self" />
   ) : (
-    <CheckInClosed opensAt={getSelfCheckInOpensAt()} />
+    <CheckInClosed state="closed" closedAt={getSelfCheckInClosesAt()} />
   )
 }

@@ -51,7 +51,7 @@ const registrations = [
     title: "Volunteer",
     description: "Help run VarCamp on the day.",
     href: "/2026/volunteer",
-    status: "soon",
+    status: "open",
   },
   {
     title: "Organizer",

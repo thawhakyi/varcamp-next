@@ -15,8 +15,8 @@ import {
 import { scheduleAttendeeSheetSync } from "@/lib/attendee-sheet-sync"
 import {
   getCheckInSession,
+  getSelfCheckInStatus,
   isSameOriginRequest,
-  isSelfCheckInOpen,
 } from "@/lib/check-in-session"
 
 export const runtime = "nodejs"
@@ -94,13 +94,20 @@ export async function POST(request: Request) {
     )
   }
 
-  // Staff sign in; once self check-in opens, a ticket's UUID is enough.
+  // Staff sign in; while self check-in is open, a ticket's UUID is enough.
   const session = await getCheckInSession()
+  const selfCheckInStatus = getSelfCheckInStatus()
   const checkedInBy =
-    session?.staffName ?? (isSelfCheckInOpen() ? selfCheckInLabel : null)
+    session?.staffName ??
+    (selfCheckInStatus === "open" ? selfCheckInLabel : null)
 
   if (!checkedInBy) {
-    return unauthorizedResponse()
+    return selfCheckInStatus === "closed"
+      ? Response.json(
+          { message: "Check-in has closed." },
+          { status: 401, headers: responseHeaders }
+        )
+      : unauthorizedResponse()
   }
 
   const result = checkInSchema.safeParse(await request.json().catch(() => null))

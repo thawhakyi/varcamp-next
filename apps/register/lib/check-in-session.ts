@@ -23,24 +23,36 @@ export function isCheckInConfigured() {
   return getCheckInSecrets() !== null
 }
 
-// From this moment attendees can check themselves in without a passcode.
-// CHECK_IN_OPEN_FROM overrides it, for example to test before the event.
+// Between these times attendees can check themselves in without a passcode.
+// CHECK_IN_OPEN_FROM and CHECK_IN_OPEN_UNTIL override them, for example to
+// test before the event. Signed-in staff can check people in at any time.
 const defaultSelfCheckInOpensAt = "2026-11-15T08:30:00+06:30"
+const defaultSelfCheckInClosesAt = "2026-11-15T17:00:00+06:30"
 
-export function getSelfCheckInOpensAt() {
-  const configuredOpensAt = Date.parse(
-    process.env.CHECK_IN_OPEN_FROM?.trim() ?? ""
-  )
+function readTime(configured: string | undefined, fallback: string) {
+  const time = Date.parse(configured?.trim() ?? "")
 
-  return new Date(
-    Number.isNaN(configuredOpensAt)
-      ? Date.parse(defaultSelfCheckInOpensAt)
-      : configuredOpensAt
-  )
+  return new Date(Number.isNaN(time) ? Date.parse(fallback) : time)
 }
 
-export function isSelfCheckInOpen() {
-  return Date.now() >= getSelfCheckInOpensAt().getTime()
+export function getSelfCheckInOpensAt() {
+  return readTime(process.env.CHECK_IN_OPEN_FROM, defaultSelfCheckInOpensAt)
+}
+
+export function getSelfCheckInClosesAt() {
+  return readTime(process.env.CHECK_IN_OPEN_UNTIL, defaultSelfCheckInClosesAt)
+}
+
+export function getSelfCheckInStatus() {
+  const now = Date.now()
+
+  if (now < getSelfCheckInOpensAt().getTime()) {
+    return "not-open" as const
+  }
+
+  return now < getSelfCheckInClosesAt().getTime()
+    ? ("open" as const)
+    : ("closed" as const)
 }
 
 // Hashing first gives both sides the same length, as timingSafeEqual needs.
