@@ -73,7 +73,10 @@ const globalDatabase = globalThis as typeof globalThis & {
 // touches the database.
 function getDatabase() {
   if (!globalDatabase.attendeeDatabase) {
+    // The path is only known at runtime, so the build shouldn't try to
+    // trace files from it.
     const path = resolve(
+      /* turbopackIgnore: true */
       process.env.ATTENDEE_DATABASE_PATH?.trim() || defaultDatabasePath
     )
 
