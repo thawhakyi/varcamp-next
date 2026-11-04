@@ -17,6 +17,7 @@ import { VarCampLogoHorizontal } from "@workspace/ui/components/varcamp-logo"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { attendeeRegistrationOpen } from "@/app/2026/attendee/_components/attendee-data"
+import { volunteerRegistrationOpen } from "@/app/2026/volunteer/_components/volunteer-data"
 import { BorderDecorations } from "@/app/_components/border-decorations"
 import { mainWebsiteUrl } from "@/app/_components/registration-status"
 
@@ -51,7 +52,7 @@ const registrations = [
     title: "Volunteer",
     description: "Help run VarCamp on the day.",
     href: "/2026/volunteer",
-    status: "open",
+    status: volunteerRegistrationOpen ? "open" : "closed",
   },
   {
     title: "Organizer",

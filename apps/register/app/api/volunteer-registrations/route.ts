@@ -1,3 +1,4 @@
+import { volunteerRegistrationOpen } from "@/app/2026/volunteer/_components/volunteer-data"
 import { appendVolunteerRegistration } from "@/lib/google-sheets"
 import {
   checkVolunteerRateLimit,
@@ -84,6 +85,13 @@ function createRateLimitResponse(
 }
 
 export async function POST(request: Request) {
+  if (!volunteerRegistrationOpen) {
+    return Response.json(
+      { message: "Volunteer registration is closed." },
+      { status: 403, headers: responseHeaders }
+    )
+  }
+
   if (!isSameOriginSubmission(request)) {
     return Response.json(
       { message: "Cross-origin submissions are not allowed." },

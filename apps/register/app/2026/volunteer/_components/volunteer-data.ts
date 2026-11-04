@@ -1,3 +1,7 @@
+// Switches the page between the form and "Registrations closed", and lets the
+// API accept submissions.
+export const volunteerRegistrationOpen = false
+
 export const registrationSteps = [
   { title: "Personal Information", description: "Who you are" },
   { title: "Team Preferences", description: "How you fit in" },
