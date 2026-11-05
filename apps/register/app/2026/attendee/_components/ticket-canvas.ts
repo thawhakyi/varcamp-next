@@ -95,7 +95,7 @@ async function loadImage(source: string, attempts = 3) {
 // The text is passed so fonts limited by unicode-range, such as the Myanmar
 // font, are loaded when the name needs them.
 async function loadFonts(fontFamily: string, text: string, timeoutMs = 3000) {
-  if (!("fonts" in document)) {
+  if (!fontFamily || !("fonts" in document)) {
     return
   }
 
@@ -114,12 +114,23 @@ async function loadFonts(fontFamily: string, text: string, timeoutMs = 3000) {
 
 // next/font gives each font a generated family name, exposed as a CSS
 // variable. The Myanmar font follows Inter so Myanmar names render too.
-function getFontFamily() {
+function getFontFamilies() {
   const styles = getComputedStyle(document.documentElement)
   const inter = styles.getPropertyValue("--font-inter").trim()
   const myanmar = styles.getPropertyValue("--font-myanmar").trim()
 
-  return [inter || "Inter", myanmar, "sans-serif"].filter(Boolean).join(", ")
+  return [inter || "Inter", myanmar]
+    .flatMap((value) => value.split(","))
+    .map((family) => family.trim())
+    .filter(Boolean)
+}
+
+// next/font also adds an "… Fallback" family that points to the device's
+// Arial with local(). It has nothing to download, and on devices without
+// Arial (most Android phones) loading it fails, so only the web fonts are
+// loaded. The fallback still stays in the drawing font stack.
+function isLocalFallback(family: string) {
+  return /\sFallback["']?$/i.test(family)
 }
 
 function wrapText(
@@ -220,10 +231,14 @@ export async function drawTicket(
   canvas: HTMLCanvasElement,
   ticket: AttendeeTicket
 ) {
-  const fontFamily = getFontFamily()
+  const families = getFontFamilies()
+  const fontFamily = [...families, "sans-serif"].join(", ")
+  const webFontFamily = families
+    .filter((family) => !isLocalFallback(family))
+    .join(", ")
   const [template] = await Promise.all([
     loadImage(ticketTemplateUrl),
-    loadFonts(fontFamily, `${ticket.name} ${ticket.ticketId}`),
+    loadFonts(webFontFamily, `${ticket.name} ${ticket.ticketId}`),
   ])
   const context = canvas.getContext("2d")
 
