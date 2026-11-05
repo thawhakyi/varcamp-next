@@ -47,13 +47,67 @@ export function getQrPayload(ticket: AttendeeTicket) {
   })
 }
 
-async function loadImage(source: string) {
-  const image = new Image()
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-  image.src = source
-  await image.decode()
+// Uses load/error events rather than image.decode(), which some in-app
+// browsers (such as Facebook's) reject even when the image loads.
+function loadImageOnce(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
 
-  return image
+    image.onload = () => {
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        resolve(image)
+      } else {
+        reject(new Error("The ticket template is empty."))
+      }
+    }
+    image.onerror = () =>
+      reject(new Error("The ticket template could not be loaded."))
+    image.src = source
+  })
+}
+
+// Mobile networks drop requests now and then, so a failed load is retried
+// a few times. Retries add a query string to skip a bad cached response.
+async function loadImage(source: string, attempts = 3) {
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const url =
+        attempt === 0
+          ? source
+          : `${source}${source.includes("?") ? "&" : "?"}retry=${Date.now()}`
+
+      return await loadImageOnce(url)
+    } catch (error) {
+      lastError = error
+      await wait(500 * 2 ** attempt)
+    }
+  }
+
+  throw lastError
+}
+
+// The font only improves how the text looks. If it fails or is slow, the
+// ticket is drawn with the fallback font instead of not at all.
+async function loadFonts(fontFamily: string, timeoutMs = 3000) {
+  if (!("fonts" in document)) {
+    return
+  }
+
+  try {
+    await Promise.race([
+      Promise.all([
+        document.fonts.load(`400 12px ${fontFamily}`),
+        document.fonts.load(`700 12px ${fontFamily}`),
+      ]),
+      wait(timeoutMs),
+    ])
+  } catch (error) {
+    console.warn("Ticket font did not load; using the fallback font.", error)
+  }
 }
 
 // next/font gives Inter a generated family name, exposed as --font-inter.
@@ -166,8 +220,7 @@ export async function drawTicket(
   const fontFamily = getFontFamily()
   const [template] = await Promise.all([
     loadImage(ticketTemplateUrl),
-    document.fonts.load(`400 12px ${fontFamily}`),
-    document.fonts.load(`700 12px ${fontFamily}`),
+    loadFonts(fontFamily),
   ])
   const context = canvas.getContext("2d")
 
