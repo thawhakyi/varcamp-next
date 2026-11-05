@@ -9,7 +9,7 @@ import {
 } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRightIcon, DownloadIcon } from "lucide-react"
+import { ArrowRightIcon, DownloadIcon, RotateCwIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@workspace/ui/components/badge"
@@ -72,6 +72,7 @@ export function AttendeeTicketView() {
   const [drawStatus, setDrawStatus] = useState<"drawing" | "ready" | "error">(
     "drawing"
   )
+  const [drawAttempt, setDrawAttempt] = useState(0)
   const storedTicket = useSyncExternalStore(
     subscribeToStorage,
     readStoredTicket,
@@ -115,7 +116,12 @@ export function AttendeeTicketView() {
     return () => {
       isCurrent = false
     }
-  }, [ticket])
+  }, [ticket, drawAttempt])
+
+  const retryDraw = () => {
+    setDrawStatus("drawing")
+    setDrawAttempt((attempt) => attempt + 1)
+  }
 
   const downloadTicket = () => {
     const canvas = canvasRef.current
@@ -196,13 +202,19 @@ export function AttendeeTicketView() {
             />
           )}
           {drawStatus === "error" && (
-            <p
+            <div
               role="alert"
-              className="rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground"
+              className="flex flex-col items-start gap-3 rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground"
             >
-              We couldn&apos;t display your ticket image. Your registration is
-              saved; please note your ticket ID below and refresh to try again.
-            </p>
+              <p>
+                We couldn&apos;t display your ticket image. Your registration is
+                saved. Please note your ticket ID below and try again.
+              </p>
+              <Button type="button" variant="outline" onClick={retryDraw}>
+                <RotateCwIcon data-icon="inline-start" />
+                Try again
+              </Button>
+            </div>
           )}
           {ticket && (
             <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
