@@ -239,10 +239,12 @@ file is created on the first registration and is not tracked by Git. The
 Back up the database daily, and before deploying on the event day:
 
 ```bash
-cd /var/www/register.var.camp/htdocs/apps/register
-mkdir -p backups
-sqlite3 data/attendees.sqlite ".backup 'backups/attendees-$(date +%F-%H%M).sqlite'"
+bash scripts/backup-register.sh --db-only
 ```
+
+For a full backup (database, env files, Nginx config and PM2 list), run it
+without `--db-only`. See [docs/server-migration.md](docs/server-migration.md)
+for moving to a new server and the GitHub deploy plan.
 
 Use `.backup` rather than copying the file, so writes in progress are not
 lost. Run the register app as a single PM2 process; the sheet copy is
