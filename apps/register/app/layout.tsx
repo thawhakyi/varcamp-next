@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google"
+import localFont from "next/font/local"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -20,11 +21,24 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 })
 
+// Inter has no Myanmar glyphs. This font covers Myanmar text only; the
+// unicode-range keeps it from loading on pages without Myanmar characters.
+const myanmar = localFont({
+  src: "./fonts/masterpiece-uni-round.woff2",
+  weight: "400",
+  variable: "--font-myanmar",
+  adjustFontFallback: false,
+  declarations: [
+    { prop: "unicode-range", value: "U+1000-109F, U+A9E0-A9FF, U+AA60-AA7F" },
+  ],
+})
+
 // Toasts use the app font and solid brand colors. Neutral toasts invert the
 // page colors, and errors keep the same red in both themes so white text
 // stays readable.
 const toasterStyle = {
-  fontFamily: "var(--font-inter), ui-sans-serif, system-ui, sans-serif",
+  fontFamily:
+    "var(--font-inter), var(--font-myanmar), ui-sans-serif, system-ui, sans-serif",
   "--border-radius": "var(--radius)",
   "--normal-bg": "var(--foreground)",
   "--normal-text": "var(--background)",
@@ -57,6 +71,7 @@ export default function RootLayout({
         geist.variable,
         "font-sans",
         inter.variable,
+        myanmar.variable,
         geistMono.variable
       )}
     >

@@ -92,7 +92,9 @@ async function loadImage(source: string, attempts = 3) {
 
 // The font only improves how the text looks. If it fails or is slow, the
 // ticket is drawn with the fallback font instead of not at all.
-async function loadFonts(fontFamily: string, timeoutMs = 3000) {
+// The text is passed so fonts limited by unicode-range, such as the Myanmar
+// font, are loaded when the name needs them.
+async function loadFonts(fontFamily: string, text: string, timeoutMs = 3000) {
   if (!("fonts" in document)) {
     return
   }
@@ -100,8 +102,8 @@ async function loadFonts(fontFamily: string, timeoutMs = 3000) {
   try {
     await Promise.race([
       Promise.all([
-        document.fonts.load(`400 12px ${fontFamily}`),
-        document.fonts.load(`700 12px ${fontFamily}`),
+        document.fonts.load(`400 12px ${fontFamily}`, text),
+        document.fonts.load(`700 12px ${fontFamily}`, text),
       ]),
       wait(timeoutMs),
     ])
@@ -110,13 +112,14 @@ async function loadFonts(fontFamily: string, timeoutMs = 3000) {
   }
 }
 
-// next/font gives Inter a generated family name, exposed as --font-inter.
+// next/font gives each font a generated family name, exposed as a CSS
+// variable. The Myanmar font follows Inter so Myanmar names render too.
 function getFontFamily() {
-  const inter = getComputedStyle(document.documentElement)
-    .getPropertyValue("--font-inter")
-    .trim()
+  const styles = getComputedStyle(document.documentElement)
+  const inter = styles.getPropertyValue("--font-inter").trim()
+  const myanmar = styles.getPropertyValue("--font-myanmar").trim()
 
-  return `${inter || "Inter"}, sans-serif`
+  return [inter || "Inter", myanmar, "sans-serif"].filter(Boolean).join(", ")
 }
 
 function wrapText(
@@ -220,7 +223,7 @@ export async function drawTicket(
   const fontFamily = getFontFamily()
   const [template] = await Promise.all([
     loadImage(ticketTemplateUrl),
-    loadFonts(fontFamily),
+    loadFonts(fontFamily, `${ticket.name} ${ticket.ticketId}`),
   ])
   const context = canvas.getContext("2d")
 
