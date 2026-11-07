@@ -487,6 +487,58 @@ function getSheetPrefix(range: string) {
   return range.slice(0, range.indexOf("!") + 1)
 }
 
+// Empty when the range has no tab name; the first tab is used then, as the
+// values API does.
+function getSheetTitle(range: string) {
+  const separatorIndex = range.indexOf("!")
+  const title = separatorIndex >= 0 ? range.slice(0, separatorIndex) : ""
+
+  // A quoted tab name ('My Tab') escapes single quotes by doubling them.
+  return title.startsWith("'") && title.endsWith("'")
+    ? title.slice(1, -1).replace(/''/g, "'")
+    : title
+}
+
+const sheetIdCache = new Map<string, number>()
+
+async function getSheetId(auth: JWT, spreadsheetId: string, title: string) {
+  const cacheKey = `${spreadsheetId}/${title}`
+  const cachedId = sheetIdCache.get(cacheKey)
+
+  if (cachedId !== undefined) {
+    return cachedId
+  }
+
+  const response = await auth.request<{
+    sheets?: { properties?: { sheetId?: number; title?: string } }[]
+  }>({
+    url: `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+      spreadsheetId
+    )}`,
+    method: "GET",
+    params: { fields: "sheets.properties(sheetId,title)" },
+  })
+  const sheets = response.data.sheets ?? []
+  const sheetId = (
+    title
+      ? sheets.find((sheet) => sheet.properties?.title === title)
+      : sheets[0]
+  )?.properties?.sheetId
+
+  if (sheetId === undefined) {
+    throw new Error(`Google Sheets tab "${title}" was not found.`)
+  }
+
+  sheetIdCache.set(cacheKey, sheetId)
+
+  return sheetId
+}
+
+// Uses appendCells rather than values.append. values.append guesses where
+// the table is, and once it guessed wrong it kept writing new speaker rows
+// from column V instead of A. appendCells always adds the row below the last
+// row with data, starting in column A. Values are saved as plain text, the
+// same as valueInputOption RAW.
 async function appendRow(
   rangeSettings: RangeSettings,
   headers: readonly string[],
@@ -496,18 +548,39 @@ async function appendRow(
 
   await ensureHeaderRow(auth, spreadsheetId, range, headers)
 
-  await auth.request({
-    url: `${getSheetsValueUrl(spreadsheetId, range)}:append`,
-    method: "POST",
-    params: {
-      insertDataOption: "INSERT_ROWS",
-      valueInputOption: "RAW",
-    },
-    data: {
-      majorDimension: "ROWS",
-      values: [row],
-    },
-  })
+  const title = getSheetTitle(range)
+  const sheetId = await getSheetId(auth, spreadsheetId, title)
+
+  // If the tab was deleted and recreated, the cached ID is stale; the next
+  // submission looks it up again.
+  await auth
+    .request({
+      url: `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+        spreadsheetId
+      )}:batchUpdate`,
+      method: "POST",
+      data: {
+        requests: [
+          {
+            appendCells: {
+              sheetId,
+              fields: "userEnteredValue",
+              rows: [
+                {
+                  values: row.map((value) =>
+                    value ? { userEnteredValue: { stringValue: value } } : {}
+                  ),
+                },
+              ],
+            },
+          },
+        ],
+      },
+    })
+    .catch((error: unknown) => {
+      sheetIdCache.delete(`${spreadsheetId}/${title}`)
+      throw error
+    })
 }
 
 async function appendRegistration(
