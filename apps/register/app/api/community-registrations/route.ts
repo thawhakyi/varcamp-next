@@ -1,4 +1,7 @@
-import { logoMaxBytes } from "@/app/2026/community/_components/community-data"
+import {
+  communityRegistrationOpen,
+  logoMaxBytes,
+} from "@/app/2026/community/_components/community-data"
 import { uploadCommunityLogo } from "@/lib/cloudflare-r2"
 import {
   checkCommunityRateLimit,
@@ -131,6 +134,13 @@ async function detectLogoSignature(logo: File) {
 }
 
 export async function POST(request: Request) {
+  if (!communityRegistrationOpen) {
+    return Response.json(
+      { message: "Community registration is closed." },
+      { status: 403, headers: responseHeaders }
+    )
+  }
+
   if (!isSameOriginSubmission(request)) {
     return Response.json(
       { message: genericErrorMessage },

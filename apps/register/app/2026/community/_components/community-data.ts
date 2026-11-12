@@ -1,3 +1,7 @@
+// Switches the page between the form and "Registrations closed", and lets the
+// API accept submissions.
+export const communityRegistrationOpen = false
+
 export const registrationSteps = [
   {
     title: "Community Profile",
