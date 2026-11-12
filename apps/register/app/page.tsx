@@ -17,6 +17,7 @@ import { VarCampLogoHorizontal } from "@workspace/ui/components/varcamp-logo"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { attendeeRegistrationOpen } from "@/app/2026/attendee/_components/attendee-data"
+import { communityRegistrationOpen } from "@/app/2026/community/_components/community-data"
 import { volunteerRegistrationOpen } from "@/app/2026/volunteer/_components/volunteer-data"
 import { BorderDecorations } from "@/app/_components/border-decorations"
 import { mainWebsiteUrl } from "@/app/_components/registration-status"
@@ -46,7 +47,7 @@ const registrations = [
     title: "Community",
     description: "Take part as a community or organization.",
     href: "/2026/community",
-    status: "open",
+    status: communityRegistrationOpen ? "open" : "closed",
   },
   {
     title: "Volunteer",
