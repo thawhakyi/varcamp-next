@@ -18,6 +18,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { attendeeRegistrationOpen } from "@/app/2026/attendee/_components/attendee-data"
 import { communityRegistrationOpen } from "@/app/2026/community/_components/community-data"
+import { speakerRegistrationOpen } from "@/app/2026/speaker/_components/speaker-data"
 import { volunteerRegistrationOpen } from "@/app/2026/volunteer/_components/volunteer-data"
 import { BorderDecorations } from "@/app/_components/border-decorations"
 import { mainWebsiteUrl } from "@/app/_components/registration-status"
@@ -41,7 +42,7 @@ const registrations = [
     title: "Speaker",
     description: "Share a session with the VarCamp community.",
     href: "/2026/speaker",
-    status: "open",
+    status: speakerRegistrationOpen ? "open" : "closed",
   },
   {
     title: "Community",

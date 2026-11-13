@@ -1,4 +1,7 @@
-import { profilePhotoMaxBytes } from "@/app/2026/speaker/_components/speaker-data"
+import {
+  profilePhotoMaxBytes,
+  speakerRegistrationOpen,
+} from "@/app/2026/speaker/_components/speaker-data"
 import { uploadSpeakerProfilePhoto } from "@/lib/cloudflare-r2"
 import { appendSpeakerRegistration } from "@/lib/google-sheets"
 import {
@@ -130,6 +133,13 @@ async function detectPhotoSignature(photo: File) {
 }
 
 export async function POST(request: Request) {
+  if (!speakerRegistrationOpen) {
+    return Response.json(
+      { message: "Speaker registration is closed." },
+      { status: 403, headers: responseHeaders }
+    )
+  }
+
   if (!isSameOriginSubmission(request)) {
     return Response.json(
       { message: genericErrorMessage },
