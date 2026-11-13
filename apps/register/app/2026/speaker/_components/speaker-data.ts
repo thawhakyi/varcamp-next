@@ -1,3 +1,7 @@
+// Switches the page between the form and "Registrations closed", and lets the
+// API accept submissions.
+export const speakerRegistrationOpen = false
+
 export const registrationSteps = [
   {
     title: "General Information",
