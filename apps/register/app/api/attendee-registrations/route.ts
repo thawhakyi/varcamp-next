@@ -95,7 +95,7 @@ function createRateLimitResponse(
 export async function POST(request: Request) {
   if (!attendeeRegistrationOpen) {
     return Response.json(
-      { message: "Attendee registration is not open yet." },
+      { message: "Attendee registration is closed." },
       { status: 403, headers: responseHeaders }
     )
   }
