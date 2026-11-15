@@ -1,6 +1,6 @@
-// Switches the page from "Coming soon" to the form, and lets the API accept
-// submissions.
-export const attendeeRegistrationOpen = true
+// Switches the page between the form and "Registrations closed", and lets the
+// API accept submissions. Tickets and check-in keep working when closed.
+export const attendeeRegistrationOpen = false
 
 export const registrationSteps = [
   {

@@ -11,8 +11,8 @@ export const metadata: Metadata = attendeeRegistrationOpen
       description: "Register to attend VarCamp 2026.",
     }
   : {
-      title: "Coming Soon | VarCamp 2026",
-      description: "Attendee registration for VarCamp 2026 opens soon.",
+      title: "Registrations Closed | VarCamp 2026",
+      description: "Attendee registration for VarCamp 2026 is now closed.",
     }
 
 export default function AttendeePage() {
@@ -22,12 +22,12 @@ export default function AttendeePage() {
 
   return (
     <RegistrationStatus
-      badge="Coming soon"
-      heading="Attendee registration is coming soon"
-      description="We are getting VarCamp 2026 ready for you. Attendee registration will open here shortly."
-      asideHeading="What happens next"
-      asideDescription="Once the speakers and sessions are confirmed, we will announce the schedule and open attendee registration on this page."
-      footer="Check back soon, or follow our channels for the announcement."
+      badge="Registrations closed"
+      heading="Attendee registrations are closed"
+      description="Thank you for your interest. We are no longer accepting attendee registrations for VarCamp 2026."
+      asideHeading="Already registered?"
+      asideDescription="Your registration is still valid. Use the e-ticket you downloaded to check in at play.var.camp."
+      footer="Lost your ticket? Contact the VarCamp team on our channels."
     />
   )
 }
