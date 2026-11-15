@@ -36,7 +36,7 @@ const registrations = [
     title: "Attendee",
     description: "Join the sessions at VarCamp 2026.",
     href: "/2026/attendee",
-    status: attendeeRegistrationOpen ? "open" : "soon",
+    status: attendeeRegistrationOpen ? "open" : "closed",
   },
   {
     title: "Speaker",
