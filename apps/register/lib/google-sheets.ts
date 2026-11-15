@@ -534,6 +534,30 @@ async function getSheetId(auth: JWT, spreadsheetId: string, title: string) {
   return sheetId
 }
 
+async function getSheetRowCount(
+  auth: JWT,
+  spreadsheetId: string,
+  title: string
+) {
+  const response = await auth.request<{
+    sheets?: {
+      properties?: { title?: string; gridProperties?: { rowCount?: number } }
+    }[]
+  }>({
+    url: `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+      spreadsheetId
+    )}`,
+    method: "GET",
+    params: { fields: "sheets.properties(title,gridProperties.rowCount)" },
+  })
+  const sheets = response.data.sheets ?? []
+  const sheet = title
+    ? sheets.find((candidate) => candidate.properties?.title === title)
+    : sheets[0]
+
+  return sheet?.properties?.gridProperties?.rowCount ?? 0
+}
+
 // Uses appendCells rather than values.append. values.append guesses where
 // the table is, and once it guessed wrong it kept writing new speaker rows
 // from column V instead of A. appendCells always adds the row below the last
@@ -645,14 +669,25 @@ export async function replaceAttendeeSheet(records: AttendeeRecord[]) {
     data: { majorDimension: "ROWS", values: rows },
   })
 
-  // Clears anything below the copy, such as rows from an older layout.
-  await auth.request({
-    url: `${getSheetsValueUrl(
-      spreadsheetId,
-      `${sheetPrefix}A${rows.length + 1}:${lastColumn}`
-    )}:clear`,
-    method: "POST",
-  })
+  // Clears anything below the copy, such as rows from an older layout. The
+  // write grows the tab to fit the copy, so often there are no rows below it,
+  // and Sheets rejects a clear of rows that don't exist ("exceeds grid
+  // limits").
+  const rowCount = await getSheetRowCount(
+    auth,
+    spreadsheetId,
+    getSheetTitle(range)
+  )
+
+  if (rowCount > rows.length) {
+    await auth.request({
+      url: `${getSheetsValueUrl(
+        spreadsheetId,
+        `${sheetPrefix}A${rows.length + 1}:${lastColumn}`
+      )}:clear`,
+      method: "POST",
+    })
+  }
 }
 
 export async function appendVolunteerRegistration(
